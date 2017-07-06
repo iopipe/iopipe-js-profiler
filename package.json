@@ -1,0 +1,15 @@
+{
+  "name": "lambda-profiler",
+  "version": "0.1.0",
+  "description": "Tracing & profiling for AWS Lambda",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "IOpipe, Inc <support@iopipe.com>",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "eslint": "^4.1.1",
+    "webpack": "^3.0.0"
+  }
+}
