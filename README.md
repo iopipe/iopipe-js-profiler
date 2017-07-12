@@ -38,6 +38,9 @@ of this should be done such that it is compatible with the AWS Lambda
 container filesystem, we have published [awslambda-npm-install](https://github.com/iopipe/awslambda-npm-install)
 to simplify the compilation process.
 
+Simply run `awslambda-npm-install` to build binary dependencies into `node_modules`.
+Further information on the build and publishing process will be documented as it develops.
+
 This module is designed for both local development, and for deploying
 on AWS Lambda, using separatey compiled C extensions for NodeJS/v8.
 
