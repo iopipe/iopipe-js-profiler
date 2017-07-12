@@ -5,24 +5,42 @@ Lambda Profiler
 
 This is a profiler and tracing library for use with AWS Lambda.
 
-It requires a C-based extension to be compiled and loaded. Compilation
-of this requires access to a Docker-based host.
+## Installation:
 
 For convenience, a pre-compiled version which works with AWS Lambda
 is available as the npm module `lambda-profiler`. The source-version
-of this module is published as `lambda-profiler-src`. This defies
-typical convention of publishing sources as cross-compilation for
-AWS Lambda is non-trivial and Docker as a build requirement for npm
-modules is atypical.
+of this module is published as `lambda-profiler-src`, see section Building
+
+To install, run:
+
+`npm install lambda-profiler`
+
+## Usage
+
+Decorate your handler function with the function exported by this
+module.
+
+```
+const ioProfiler = require('lambda-profiler')
+
+module.exports.handler = ioProfiler(
+  (event, context, callback) => {
+    console.log(event)
+    callback()
+  }
+)
+```
+
+## Building
+
+It requires a C-based extension to be compiled and loaded. Compilation
+of this should be done such that it is compatible with the AWS Lambda
+container filesystem, we have published [awslambda-npm-install](https://github.com/iopipe/awslambda-npm-install)
+to simplify the compilation process.
 
 This module is designed for both local development, and for deploying
 on AWS Lambda, using separatey compiled C extensions for NodeJS/v8.
 
-## Installation:
-
-Run:
-
-`npm install lambda-profiler`
 
 ## License
 
