@@ -8,7 +8,7 @@ const s3 = new AWS.S3();
 var profiler = {}
 
 
-profiler.constructor = (userConfig) => {
+profiler.constructor = function profilerConfig (userConfig) {
   var userConfig = (userConfig) ? userConfig : {}
   config = {
     s3bucket: userConfig.s3bucket || 'lambda-profiler-dumps',
@@ -16,32 +16,36 @@ profiler.constructor = (userConfig) => {
     sampleRate: userConfig.sampleRate || 100
   }
   var decorator = (userFunction) => {
-    return (event, context, callback) => {
+    return function profiledUserFunction (event, context, callback) {
       v8profiler.setSamplingInterval(config.sampleRate)
       v8profiler.startProfiling(undefined, config.recsamples)
 
-      var stopAndSend = new Promise ((resolve, reject) => {
-        var profile = v8profiler.stopProfiling()
-        profile.export((err, output) => {
-          (err) ? reject(err) : s3.putObject({
-            Body: output,
-            Bucket: config.s3bucket,
-            Key: context.awsRequestId + ".cpuprofile"
-          }, (err, data) => {
-            if (err) {
-              reject(err)
-              return
-            }
-            resolve(data)
+      var stopAndSend = () => {
+        return new Promise ((resolve, reject) => {
+          var profile = v8profiler.stopProfiling()
+          profile.export((err, output) => {
+            (err) ? reject(err) : s3.putObject({
+              Body: output,
+              Bucket: config.s3bucket,
+              Key: context.awsRequestId + ".cpuprofile"
+            }, (err, data) => {
+              if (err) {
+                reject(err)
+                return
+              }
+              resolve(data)
+            })
           })
         })
-      })
+      }
 
-      var newCallback = lambdaCallback(callback, stopAndSend)
+      var newCallback = function wrappedCallback (err, data) {
+        stopAndSend().then(() => { callback(err, data) })
+      }
       var newContext = lambdaContext(context, stopAndSend)
 
       try {
-        userFunction(event, context, callback)
+        userFunction(event, newContext, newCallback)
       }
       catch (e) {
         stopAndSend().then(() => { throw e })

@@ -30,22 +30,22 @@ function clone(oldObject) {
   return clonedObject
 }
 
-function Context(generateLog, oldContext) {
+function Context(oldContext, callback) {
   let context = clone(oldContext)
   context.succeed = function(data) {
-    generateLog(null, () => {
+    callback.then(() => {
       oldContext.succeed(data)
     })
   }
 
   context.fail = function(err) {
-    generateLog(err, () => {
+    callback.then(() => {
       oldContext.fail(err)
     })
   }
 
   context.done = function(err, data) {
-    generateLog(err, () => {
+    callback.then(() => {
       oldContext.done(err, data)
     })
   }
