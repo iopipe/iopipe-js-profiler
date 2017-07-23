@@ -23,19 +23,29 @@ profiler.constructor = function profilerConfig (userConfig) {
       var stopAndSend = () => {
         return new Promise ((resolve, reject) => {
           var profile = v8profiler.stopProfiling()
-          profile.export((err, output) => {
-            (err) ? reject(err) : s3.putObject({
-              Body: output,
-              Bucket: config.s3bucket,
-              Key: context.awsRequestId + ".cpuprofile"
-            }, (err, data) => {
-              if (err) {
-                reject(err)
-                return
-              }
-              resolve(data)
-            })
-          })
+          profile.export(
+            (err, output) => {
+              (err) ? reject(err) : s3.putObject({
+                Body: output,
+                Bucket: config.s3bucket,
+                Key: context.awsRequestId + ".cpuprofile"
+              }, (err, data) => {
+                (err) ? reject(err) : s3.getSignedUrl(
+                  'getObject',
+                  {
+                    Bucket: config.s3bucket,
+                    Key: context.awsRequestId + ".cpuprofile"
+                  },
+                  (err, url) => {
+                    (err) ? reject(err) : (() => {
+                      context.iopipe.log('profiler_url', url)
+                      resolve(url)
+                    })()
+                  }
+                )
+              })
+            }
+          )
         })
       }
 
