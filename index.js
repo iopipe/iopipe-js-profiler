@@ -1,5 +1,5 @@
 const lambdaCallback = require('./callback')
-const lambdaContext = require('./callback')
+const lambdaContext = require('./context')
 const v8profiler = require('v8-profiler')
 const AWS = require('aws-sdk')
 const s3 = new AWS.S3();
@@ -12,6 +12,7 @@ profiler.constructor = function profilerConfig (userConfig) {
   var userConfig = (userConfig) ? userConfig : {}
   config = {
     s3bucket: userConfig.s3bucket || 'lambda-profiler-dumps',
+    s3secondsExpire: userConfig.s3secondsExpire || 2592000,
     recsamples: userConfig.recsamples || true,
     sampleRate: userConfig.sampleRate || 100
   }
