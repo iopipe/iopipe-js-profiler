@@ -1,70 +1,52 @@
-const lambdaCallback = require('./callback')
-const lambdaContext = require('./context')
 const v8profiler = require('v8-profiler')
 const AWS = require('aws-sdk')
 const s3 = new AWS.S3();
+const _ = require('lodash')
 
+class ProfilerPlugin {
+  constructor(pluginConfig = defaultConfig, invocationInstance) {
+    this.invocationInstance = invocationInstance
+    this.config = _.defaults({}, pluginConfig, {
+      s3bucket: 'lambda-profiler-dumps',
+      s3secondsExpire: 2592000,
+      recsamples: true,
+      sampleRate: 1000
+    });
 
-var profiler = {}
-
-
-profiler.constructor = function profilerConfig (userConfig) {
-  var userConfig = (userConfig) ? userConfig : {}
-  config = {
-    s3bucket: userConfig.s3bucket || 'lambda-profiler-dumps',
-    s3secondsExpire: userConfig.s3secondsExpire || 2592000,
-    recsamples: userConfig.recsamples || true,
-    sampleRate: userConfig.sampleRate || 100
+    this.hooks = {
+      'pre:invoke': this.preInvoke.bind(this),
+      'post:invoke': this.postInvoke.bind(this)
+    }
+    return this
   }
-  var decorator = (userFunction) => {
-    return function profiledUserFunction (event, context, callback) {
-      v8profiler.setSamplingInterval(config.sampleRate)
-      v8profiler.startProfiling(undefined, config.recsamples)
 
-      var stopAndSend = () => {
-        return new Promise ((resolve, reject) => {
-          var profile = v8profiler.stopProfiling()
-          profile.export(
-            (err, output) => {
-              (err) ? reject(err) : s3.putObject({
-                Body: output,
-                Bucket: config.s3bucket,
-                Key: context.awsRequestId + ".cpuprofile"
-              }, (err, data) => {
-                (err) ? reject(err) : s3.getSignedUrl(
-                  'getObject',
-                  {
-                    Bucket: config.s3bucket,
-                    Key: context.awsRequestId + ".cpuprofile"
-                  },
-                  (err, url) => {
-                    (err) ? reject(err) : (() => {
-                      context.iopipe.log('profiler_url', url)
-                      resolve(url)
-                    })()
-                  }
-                )
-              })
+  preInvoke() {
+    v8profiler.setSamplingInterval(this.config.sampleRate)
+    v8profiler.startProfiling(undefined, this.config.recsamples)
+  }
+
+  postInvoke() {
+    var profile = v8profiler.stopProfiling()
+
+    profile.export(
+      (err, output) => {
+        (err) ? undefined : s3.putObject({
+          Body: output,
+          Bucket: this.config.s3bucket,
+          Key: this.invocationInstance.context.awsRequestId + ".cpuprofile"
+        }, (err, data) => {
+          (err) ? undefined : s3.getSignedUrl(
+            'getObject',
+            {
+              Bucket: this.config.s3bucket,
+              Key: this.invocationInstance.context.awsRequestId + ".cpuprofile"
+            },
+            (err, url) => {
+              (err) ? undefined : this.invocationInstance.context.iopipe.log('profiler_url', url)
             }
           )
         })
       }
-
-      var newCallback = function wrappedCallback (err, data) {
-        stopAndSend().then(() => { callback(err, data) })
-      }
-      var newContext = lambdaContext(context, stopAndSend)
-
-      try {
-        userFunction(event, newContext, newCallback)
-      }
-      catch (e) {
-        stopAndSend().then(() => { throw e })
-      }
-    } 
+    )
   }
-
-  return decorator
 }
-
-module.exports = profiler.constructor
