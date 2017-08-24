@@ -1,5 +1,5 @@
 {
-  "name": "lambda-profiler",
+  "name": "iopipe-plugin-profiler",
   "version": "0.1.0",
   "description": "Tracing & profiling for AWS Lambda",
   "main": "index.js",
