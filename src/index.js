@@ -32,6 +32,8 @@ class ProfilerPlugin {
     v8profiler.startProfiling(undefined, this.config.recsamples);
   }
 
+  // add link to report
+
   postInvoke() {
     var profile = v8profiler.stopProfiling();
 
@@ -46,7 +48,7 @@ class ProfilerPlugin {
             },
             s3err => {
               s3err
-                ? undefined
+                ? undefined // do something with the err: log on debug?
                 : s3.getSignedUrl(
                     'getObject',
                     {
@@ -59,7 +61,7 @@ class ProfilerPlugin {
                       s3UrlErr
                         ? undefined
                         : this.invocationInstance.context.iopipe.log(
-                            'profiler_url',
+                            'profiler_url', // namespace this
                             url
                           );
                     }
@@ -70,7 +72,7 @@ class ProfilerPlugin {
   }
 }
 
-module.exports = function setupIOpipePluginProfiler(pluginOpts) {
+module.exports = function instantiateProfilerPlugin(pluginOpts) {
   return invocationInstance => {
     return new ProfilerPlugin(pluginOpts, invocationInstance);
   };
