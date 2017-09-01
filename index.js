@@ -3,6 +3,13 @@ const AWS = require('aws-sdk')
 const s3 = new AWS.S3();
 const _ = require('lodash')
 
+const defaultConfig = {
+  s3bucket: 'lambda-profiler-dumps',
+  s3secondsExpire: 2592000,
+  recsamples: true,
+  sampleRate: 1000
+}
+
 class ProfilerPlugin {
   constructor(pluginConfig = defaultConfig, invocationInstance) {
     this.invocationInstance = invocationInstance
@@ -50,3 +57,9 @@ class ProfilerPlugin {
     )
   }
 }
+
+module.exports = function setupIOpipePluginProfiler(pluginOpts) {
+  return invocationInstance => {
+    return new ProfilerPlugin(pluginOpts, invocationInstance);
+  };
+};
