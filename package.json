@@ -1,23 +1,45 @@
 {
   "name": "iopipe-plugin-profiler",
   "version": "0.1.0",
-  "description": "Tracing & profiling for AWS Lambda",
-  "main": "index.js",
+  "description": "IOpipe plugin for profiling",
+  "main": "dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "preinstall": "awslambda-npm-install install"
+    "babel": "babel src --out-dir dist --ignore **/*.test.js,**/__mocks__/**",
+    "build": "npm run babel",
+    "eslint": "eslint src",
+    "jest": "jest",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run build",
+    "test": "npm run eslint && npm run build && npm run jest"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iopipe/iopipe-plugin-profiler.git"
+  },
+  "files": [
+    "dist/"
+  ],
+  "keywords": [
+    "serverless",
+    "profiling"
+  ],
   "author": "IOpipe, Inc <support@iopipe.com>",
   "license": "Apache-2.0",
   "devDependencies": {
     "aws-sdk": "^2.82.0",
-    "babel": "^6.23.0",
+    "babel-cli": "^6.24.1",
     "babel-core": "^6.25.0",
+    "babel-eslint": "^7.2.3",
     "babel-loader": "^7.1.1",
     "eslint": "^4.1.1",
+    "eslint-plugin-jasmine": "^2.8.4",
+    "eslint-plugin-jest": "^20.0.3",
+    "eslint-plugin-prettier": "^2.2.0",
     "ignore-loader": "^0.1.2",
+    "jest": "^20.0.4",
     "lodash": "^4.17.4",
     "node-loader": "^0.6.0",
+    "prettier": "^1.6.1",
     "shebang-loader": "0.0.1",
     "webpack": "^3.0.0"
   }
