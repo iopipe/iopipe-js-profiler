@@ -1,7 +1,6 @@
 const v8profiler = require('v8-profiler');
 const AWS = require('aws-sdk');
 const s3 = new AWS.S3();
-const _ = require('lodash');
 
 const defaultConfig = {
   s3bucket: 'lambda-profiler-dumps',
@@ -13,12 +12,7 @@ const defaultConfig = {
 class ProfilerPlugin {
   constructor(pluginConfig = defaultConfig, invocationInstance) {
     this.invocationInstance = invocationInstance;
-    this.config = _.defaults({}, pluginConfig, {
-      s3bucket: 'lambda-profiler-dumps',
-      s3secondsExpire: 2592000,
-      recsamples: true,
-      sampleRate: 1000
-    });
+    this.config = Object.assign({}, defaultConfig, pluginConfig);
 
     this.hooks = {
       'pre:invoke': this.preInvoke.bind(this),
