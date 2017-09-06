@@ -6,7 +6,8 @@ const defaultConfig = {
   s3bucket: 'lambda-profiler-dumps',
   s3secondsExpire: 2592000,
   recsamples: true,
-  sampleRate: 1000
+  sampleRate: 1000,
+  debug: true
 };
 
 class ProfilerPlugin {
@@ -16,9 +17,16 @@ class ProfilerPlugin {
 
     this.hooks = {
       'pre:invoke': this.preInvoke.bind(this),
-      'post:invoke': this.postInvoke.bind(this)
+      'post:invoke': this.postInvoke.bind(this),
+      'post:report': () => {
+        console.log('postreport');
+      }
     };
     return this;
+  }
+
+  log(logline) {
+    this.config.debug ? console.log(logline) : null;
   }
 
   preInvoke() {
@@ -26,43 +34,43 @@ class ProfilerPlugin {
     v8profiler.startProfiling(undefined, this.config.recsamples);
   }
 
-  // add link to report
-
-  postInvoke() {
+  async postInvoke() {
+    this.log('post-invoke');
     var profile = v8profiler.stopProfiling();
-
-    profile.export((err, output) => {
-      err
-        ? undefined
-        : s3.putObject(
-            {
-              Body: output,
-              Bucket: this.config.s3bucket,
-              Key: this.invocationInstance.context.awsRequestId + '.cpuprofile'
-            },
-            s3err => {
-              s3err
-                ? undefined // do something with the err: log on debug?
-                : s3.getSignedUrl(
-                    'getObject',
-                    {
-                      Bucket: this.config.s3bucket,
-                      Key:
-                        this.invocationInstance.context.awsRequestId +
-                        '.cpuprofile'
-                    },
-                    (s3UrlErr, url) => {
-                      s3UrlErr
-                        ? undefined
-                        : this.invocationInstance.context.iopipe.log(
-                            'profiler_url', // namespace this
-                            url
-                          );
-                    }
-                  );
-            }
-          );
+    const output = await new Promise((resolve, reject) => {
+      profile.export((err, output) => {
+        err ? reject(err) : resolve(output);
+      });
     });
+    await s3
+      .putObject({
+        Body: output,
+        Bucket: this.config.s3bucket,
+        Key: `${this.invocationInstance.context.awsRequestId}.cpuprofile`
+      })
+      .promise()
+      .then(async data => {
+        this.log('foo3')
+        // await s3.getSignedUrl(
+        //   'getObject',
+        //   {
+        //     Bucket: this.config.s3bucket,
+        //     Key: this.invocationInstance.context.awsRequestId + '.cpuprofile'
+        //   },
+        //   (s3UrlErr, url) => {
+        //     s3UrlErr
+        //       ? this.log(s3UrlErr)
+        //       : this.invocationInstance.context.iopipe.log(
+        //           'IOpipeProfilerUrl',
+        //           url
+        //         );
+        //   }
+        // );
+      })
+      .catch(err => {
+        this.log(err);
+      });
+    this.log('end of hook')
   }
 }
 
