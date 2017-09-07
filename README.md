@@ -37,10 +37,9 @@ exports.handler = iopipe((event, context) => {
 
 ## Config
 
-#### `s3bucket` (string: required)
+#### `s3bucket` (string: optional)
 
-The name of the s3 bucket where you will store your profiling data. *N.B. s3
-bucket names must be unique*.
+The S3 bucket where you will store your profiling data. Defaults to IOpipe's datastore.
 
 #### `s3secondsExpire` (Number: optional = 2592000)
 

@@ -1,5 +1,6 @@
-const v8profiler = require('v8-profiler');
-const AWS = require('aws-sdk');
+import v8profiler from 'v8-profiler';
+import AWS from 'aws-sdk';
+
 const s3 = new AWS.S3();
 
 const defaultConfig = {
@@ -7,7 +8,7 @@ const defaultConfig = {
   s3secondsExpire: 2592000,
   recsamples: true,
   sampleRate: 1000,
-  debug: true
+  debug: false
 };
 
 class ProfilerPlugin {
@@ -18,9 +19,6 @@ class ProfilerPlugin {
     this.hooks = {
       'pre:invoke': this.preInvoke.bind(this),
       'post:invoke': this.postInvoke.bind(this),
-      'post:report': () => {
-        console.log('postreport');
-      }
     };
     return this;
   }
@@ -36,10 +34,10 @@ class ProfilerPlugin {
 
   async postInvoke() {
     this.log('post-invoke');
-    var profile = v8profiler.stopProfiling();
+    const profile = v8profiler.stopProfiling();
     const output = await new Promise((resolve, reject) => {
-      profile.export((err, output) => {
-        err ? reject(err) : resolve(output);
+      profile.export((err, data) => {
+        err ? reject(err) : resolve(data);
       });
     });
     await s3
@@ -50,27 +48,27 @@ class ProfilerPlugin {
       })
       .promise()
       .then(async data => {
-        this.log('foo3')
-        // await s3.getSignedUrl(
-        //   'getObject',
-        //   {
-        //     Bucket: this.config.s3bucket,
-        //     Key: this.invocationInstance.context.awsRequestId + '.cpuprofile'
-        //   },
-        //   (s3UrlErr, url) => {
-        //     s3UrlErr
-        //       ? this.log(s3UrlErr)
-        //       : this.invocationInstance.context.iopipe.log(
-        //           'IOpipeProfilerUrl',
-        //           url
-        //         );
-        //   }
-        // );
+        this.log(data);
+        await s3.getSignedUrl(
+          'getObject',
+          {
+            Bucket: this.config.s3bucket,
+            Key: this.invocationInstance.context.awsRequestId + '.cpuprofile'
+          },
+          (s3UrlErr, url) => {
+            s3UrlErr
+              ? this.log(s3UrlErr)
+              : this.invocationInstance.context.iopipe.log(
+                  'IOpipeProfilerUrl',
+                  url
+                );
+          }
+        );
       })
       .catch(err => {
         this.log(err);
       });
-    this.log('end of hook')
+    this.log('end of hook');
   }
 }
 
