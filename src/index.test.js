@@ -37,9 +37,12 @@ test('Can instantiate plugin with or without options', () => {
   expect(instWithOptions.config.debug).toBe(true);
 });
 
-test('works with iopipe', async () => {
-  const iopipeInstance = iopipe({ token: 'test', plugins: [Profiler({debug:true})] });
-  const wrappedFn = iopipeInstance(async (event, context) => {
+test('works with iopipe', async function runTest() {
+  const iopipeInstance = iopipe({
+    token: 'test',
+    plugins: [Profiler({ debug: true })]
+  });
+  const wrappedFn = iopipeInstance((event, context) => {
     context.succeed('wow');
   });
   const context = mockContext({ functionName: 'test-1' });

@@ -18,7 +18,7 @@ class ProfilerPlugin {
 
     this.hooks = {
       'pre:invoke': this.preInvoke.bind(this),
-      'post:invoke': this.postInvoke.bind(this),
+      'post:invoke': this.postInvoke.bind(this)
     };
     return this;
   }
@@ -49,21 +49,6 @@ class ProfilerPlugin {
       .promise()
       .then(async data => {
         this.log(data);
-        await s3.getSignedUrl(
-          'getObject',
-          {
-            Bucket: this.config.s3bucket,
-            Key: this.invocationInstance.context.awsRequestId + '.cpuprofile'
-          },
-          (s3UrlErr, url) => {
-            s3UrlErr
-              ? this.log(s3UrlErr)
-              : this.invocationInstance.context.iopipe.log(
-                  'IOpipeProfilerUrl',
-                  url
-                );
-          }
-        );
       })
       .catch(err => {
         this.log(err);
