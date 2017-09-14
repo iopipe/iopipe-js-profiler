@@ -3,6 +3,7 @@ import mockContext from 'aws-lambda-mock-context';
 import _ from 'lodash';
 import iopipe from 'iopipe';
 import Profiler from './index';
+import pkg from '../package.json';
 
 AWS.mock('S3', 'putObject', (kwargs, cb) => {
   console.log(kwargs);
@@ -30,6 +31,11 @@ test('Can instantiate plugin with or without options', () => {
   expect(inst.config.recsamples).toBe(true);
   expect(inst.config.sampleRate).toBe(1000);
   expect(inst.config.debug).toBe(false);
+  expect(inst.meta.name).toBe('iopipe-plugin-profiler');
+  expect(inst.meta.version).toBe(pkg.version);
+  expect(inst.meta.homepage).toBe(
+    'https://github.com/iopipe/iopipe-plugin-profiler#readme'
+  );
   expect(instWithOptions.config.s3bucket).toBe('foo');
   expect(instWithOptions.config.s3secondsExpire).toBe(10);
   expect(instWithOptions.config.recsamples).toBe(false);

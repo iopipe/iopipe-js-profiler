@@ -2,6 +2,7 @@ import v8profiler from 'v8-profiler';
 import AWS from 'aws-sdk';
 
 const s3 = new AWS.S3();
+const pkg = require('../package.json');
 
 const defaultConfig = {
   s3bucket: 'lambda-profiler-dumps',
@@ -25,6 +26,10 @@ class ProfilerPlugin {
 
   log(logline) {
     this.config.debug ? console.log(logline) : null;
+  }
+
+  get meta() {
+    return { name: pkg.name, version: pkg.version, homepage: pkg.homepage };
   }
 
   preInvoke() {
