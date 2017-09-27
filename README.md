@@ -25,9 +25,7 @@ const iopipeLib = require('iopipe');
 const profiler = require('iopipe-plugin-profiler');
 
 const iopipe = iopipeLib({
-  plugins: [profiler({
-      s3bucket: 'my-profiling-data-goes-here'
-    })]
+  plugins: [profiler()]
 });
 
 exports.handler = iopipe((event, context) => {
