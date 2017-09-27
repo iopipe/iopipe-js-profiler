@@ -37,7 +37,7 @@ exports.handler = iopipe((event, context) => {
 
 ## Config
 
-#### `recsamples` (bool: optional = true)
+#### `recSamples` (bool: optional = true)
 
 #### `sampleRate` (number: optional = 1000)
 
