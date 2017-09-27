@@ -37,15 +37,13 @@ exports.handler = iopipe((event, context) => {
 
 ## Config
 
-#### `s3bucket` (string: optional)
-
-The S3 bucket where you will store your profiling data. Defaults to IOpipe's datastore.
-
-#### `s3secondsExpire` (Number: optional = 2592000)
-
 #### `recsamples` (bool: optional = true)
 
 #### `sampleRate` (number: optional = 1000)
+
+#### `debug` (bool: optional = false)
+
+Show debugging logs.
 
 ## Building
 
