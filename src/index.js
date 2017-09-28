@@ -30,13 +30,14 @@ class ProfilerPlugin {
   }
 
   // Send data to signing API, which will enable the data to be uploaded to S3
-
   preInvoke() {
+    if (process.env.IOPIPE_DISABLE_PROFILING) return;
     v8profiler.setSamplingInterval(this.config.sampleRate);
     v8profiler.startProfiling(undefined, this.config.recSamples);
   }
 
   async postInvoke() {
+    if (process.env.IOPIPE_DISABLE_PROFILING) return;
     this.log('post-invoke');
     const profile = v8profiler.stopProfiling();
     const output = await new Promise((resolve, reject) => {
