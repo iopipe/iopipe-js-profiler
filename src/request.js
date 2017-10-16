@@ -2,6 +2,13 @@ import https from 'https';
 
 export default function request(body, opts) {
   const { hostname, path, token, contentType = 'application/json' } = opts;
+  const headers = {
+    'content-type': contentType
+  };
+  if (token) {
+    headers['authorization'] = token;
+  }
+
   return new Promise((resolve, reject) => {
     const req = https
       .request(
@@ -11,10 +18,7 @@ export default function request(body, opts) {
           path,
           port: 443,
           method: 'POST',
-          headers: {
-            'content-type': contentType,
-            'authorization': token
-          }
+          headers
         },
         res => {
           var apiResponse = '';

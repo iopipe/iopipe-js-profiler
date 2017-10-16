@@ -1,4 +1,5 @@
 import v8profiler from 'v8-profiler';
+import * as urlLib from 'url';
 import get from 'lodash.get';
 import merge from 'lodash.merge';
 import request from './request';
@@ -50,13 +51,29 @@ class ProfilerPlugin {
       });
     });
     // Send data to signing API
-    this.log('sending request')
-    request(output, merge(signingUrl, this.token)).then(res => {
+    this.log('sending request');
+    request(
+      {
+        projectId: '9e4e9dd6-aef8-4ba6-8d32-98c86f349299',
+        arn: 'arn:aws:lambda:us-west-1:123456789012:function:test-1:$LATEST',
+        requestId: 'e92eaf90-b29d-11e7-8703-6160140ea561',
+        timestamp: this.invocationInstance.startTimestamp / 1000,
+        contentType: 'application/json'
+      },
+      merge(signingUrl, this.token)
+    ).then(res => {
       // use signature to send to S3
-      // request()
-      console.log(res);
+      try {
+        var { signedRequest, url } = JSON.parse(res.apiResponse);
+      } catch (e) {
+        this.log(`Error parsing signing API response: ${JSON.stringify(e)}`);
+        return;
+      }
+      request(output, urlLib.parse(signedRequest)).then(res => {
+        console.log(res);
+        this.log('end of hook');
+      });
     });
-    this.log('end of hook');
   }
 }
 
