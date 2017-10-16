@@ -1,5 +1,8 @@
 import v8profiler from 'v8-profiler';
+import get from 'lodash.get';
+import merge from 'lodash.merge';
 import request from './request';
+import { signingUrl } from './constants';
 
 const pkg = require('../package.json');
 
@@ -12,6 +15,7 @@ const defaultConfig = {
 class ProfilerPlugin {
   constructor(pluginConfig = defaultConfig, invocationInstance) {
     this.invocationInstance = invocationInstance;
+    this.token = { token: get(this.invocationInstance, 'config.clientId') };
     this.config = Object.assign({}, defaultConfig, pluginConfig);
 
     this.hooks = {
@@ -46,7 +50,8 @@ class ProfilerPlugin {
       });
     });
     // Send data to signing API
-    request(output, {}).then(res => {
+    this.log('sending request')
+    request(output, merge(signingUrl, this.token)).then(res => {
       // use signature to send to S3
       // request()
       console.log(res);

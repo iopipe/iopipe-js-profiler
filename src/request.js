@@ -1,17 +1,20 @@
 import https from 'https';
 
 export default function request(body, opts) {
-  const { hostname, servername, path, contentType = 'application/json' } = opts;
+  const { hostname, path, token, contentType = 'application/json' } = opts;
   return new Promise((resolve, reject) => {
     const req = https
       .request(
         {
+          servername: hostname,
           hostname,
-          servername,
           path,
           port: 443,
           method: 'POST',
-          headers: { 'content-type': contentType }
+          headers: {
+            'content-type': contentType,
+            'authorization': token
+          }
         },
         res => {
           var apiResponse = '';
