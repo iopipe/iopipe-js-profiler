@@ -54,15 +54,19 @@ class ProfilerPlugin {
     this.log('sending request');
     request(
       {
-        projectId: '9e4e9dd6-aef8-4ba6-8d32-98c86f349299',
-        arn: 'arn:aws:lambda:us-west-1:123456789012:function:test-1:$LATEST',
-        requestId: 'e92eaf90-b29d-11e7-8703-6160140ea561',
+        projectId: '9e4e9dd6-aef8-4ba6-8d32-98c86f349299', // TODO signing api does this
+        arn: this.invocationInstance.context.invokedFunctionArn,
+        requestId: this.invocationInstance.context.awsRequestId,
         timestamp: this.invocationInstance.startTimestamp / 1000,
         contentType: 'application/json'
       },
       merge(signingUrl, this.token)
     ).then(res => {
       // use signature to send to S3
+      if (res.status !== 200) {
+        this.log(res.apiResponse);
+        return;
+      }
       try {
         var { signedRequest, url } = JSON.parse(res.apiResponse);
       } catch (e) {
