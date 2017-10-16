@@ -62,11 +62,12 @@ class ProfilerPlugin {
       },
       merge(signingUrl, this.token)
     ).then(res => {
-      // use signature to send to S3
-      if (res.status !== 200) {
-        this.log(res.apiResponse);
+      // Capture other statuses
+      if (res.status !== 201) {
+        this.log(res.status, res.apiResponse);
         return;
       }
+      // use signature to send to S3
       try {
         var { signedRequest, url } = JSON.parse(res.apiResponse);
       } catch (e) {
