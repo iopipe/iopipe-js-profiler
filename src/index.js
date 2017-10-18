@@ -60,11 +60,12 @@ class ProfilerPlugin {
         timestamp: this.invocationInstance.startTimestamp / 1000,
         contentType: 'application/json'
       },
+      'POST',
       merge(signingUrl, this.token)
     ).then(res => {
       // Capture other statuses
       if (res.status !== 201) {
-        this.log(res.status, res.apiResponse);
+        this.log(`${res.status}: ${res.apiResponse}`);
         return;
       }
       // use signature to send to S3
@@ -74,7 +75,7 @@ class ProfilerPlugin {
         this.log(`Error parsing signing API response: ${JSON.stringify(e)}`);
         return;
       }
-      request(output, urlLib.parse(signedRequest)).then(res => {
+      request(output, 'PUT', urlLib.parse(signedRequest)).then(res => {
         console.log(res);
         this.log('end of hook');
       });

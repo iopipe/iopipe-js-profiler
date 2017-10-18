@@ -1,6 +1,6 @@
 import https from 'https';
 
-export default function request(body, opts) {
+export default function request(body, method, opts) {
   const { hostname, path, token, contentType = 'application/json' } = opts;
   const headers = {
     'content-type': contentType
@@ -17,7 +17,7 @@ export default function request(body, opts) {
           hostname,
           path,
           port: 443,
-          method: 'POST',
+          method: method,
           headers
         },
         res => {
