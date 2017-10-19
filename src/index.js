@@ -57,7 +57,7 @@ class ProfilerPlugin {
         projectId: '9e4e9dd6-aef8-4ba6-8d32-98c86f349299', // TODO signing api does this
         arn: this.invocationInstance.context.invokedFunctionArn,
         requestId: this.invocationInstance.context.awsRequestId,
-        timestamp: this.invocationInstance.startTimestamp / 1000,
+        timestamp: this.invocationInstance.startTimestamp,
         contentType: 'application/json'
       },
       'POST',
