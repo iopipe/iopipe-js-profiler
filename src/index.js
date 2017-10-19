@@ -57,7 +57,6 @@ class ProfilerPlugin {
         arn: this.invocationInstance.context.invokedFunctionArn,
         requestId: this.invocationInstance.context.awsRequestId,
         timestamp: this.invocationInstance.startTimestamp,
-        contentType: 'application/json'
       },
       'POST',
       merge(signingUrl, this.token)
