@@ -49,6 +49,7 @@ class ProfilerPlugin {
     const profile = v8profiler.stopProfiling();
     const output = await new Promise((resolve, reject) => {
       profile.export((err, data) => {
+        profile.delete();
         err ? reject(err) : resolve(data);
       });
     });
