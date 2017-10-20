@@ -1,7 +1,7 @@
 import https from 'https';
 
 export default function request(body, method, opts) {
-  const { hostname, path, token, contentType } = opts;
+  const { hostname, path, token } = opts;
   const requestOptions = {
     hostname,
     path,
@@ -14,6 +14,8 @@ export default function request(body, method, opts) {
       authorization: token
     };
   }
+  requestOptions['headers'] = requestOptions.headers || {};
+  requestOptions.headers['content-length'] = Buffer.byteLength(body);
   return new Promise((resolve, reject) => {
     const req = https
       .request(requestOptions, res => {
@@ -31,7 +33,7 @@ export default function request(body, method, opts) {
         reject(err);
       });
 
-    req.write(JSON.stringify(body));
+    req.write(body);
     req.end();
   });
 }

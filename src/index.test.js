@@ -36,7 +36,8 @@ test('Can instantiate plugin with or without options', () => {
 test('works with iopipe', async function runTest() {
   const iopipeInstance = iopipe({
     // token: 'test',
-    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5ZTRlOWRkNi1hZWY4LTRiYTYtOGQzMi05OGM4NmYzNDkyOTkiLCJqdGkiOiJmNmRlNzA4Yi0zZGFhLTQ1OTMtYTcxYS1hYTg1MzZkYWMyYmYiLCJpYXQiOjE1MDgxNzcxMzAsImlzcyI6Imh0dHBzOi8vaW9waXBlLmNvbSIsImF1ZCI6Imh0dHBzOi8vaW9waXBlLmNvbSxodHRwczovL21ldHJpY3MtYXBpLmlvcGlwZS5jb20vZXZlbnQvLGh0dHBzOi8vZ3JhcGhxbC5pb3BpcGUuY29tIn0.1jxr_QTeYe1BSusPAAxXYUVOIrFYWJiHmgfbJlNHpVw',
+    token:
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5ZTRlOWRkNi1hZWY4LTRiYTYtOGQzMi05OGM4NmYzNDkyOTkiLCJqdGkiOiJmNmRlNzA4Yi0zZGFhLTQ1OTMtYTcxYS1hYTg1MzZkYWMyYmYiLCJpYXQiOjE1MDgxNzcxMzAsImlzcyI6Imh0dHBzOi8vaW9waXBlLmNvbSIsImF1ZCI6Imh0dHBzOi8vaW9waXBlLmNvbSxodHRwczovL21ldHJpY3MtYXBpLmlvcGlwZS5jb20vZXZlbnQvLGh0dHBzOi8vZ3JhcGhxbC5pb3BpcGUuY29tIn0.1jxr_QTeYe1BSusPAAxXYUVOIrFYWJiHmgfbJlNHpVw',
     plugins: [Profiler({ debug: true })]
   });
   const wrappedFn = iopipeInstance((event, context) => {

@@ -42,6 +42,8 @@ class ProfilerPlugin {
   }
 
   async postInvoke() {
+    let signedRequest;
+    let profileUrl;
     if (process.env.IOPIPE_DISABLE_PROFILING) return;
     this.log('post-invoke');
     const profile = v8profiler.stopProfiling();
@@ -52,29 +54,35 @@ class ProfilerPlugin {
     });
     // Send data to signing API
     this.log('sending request');
-    request(
-      {
+    await request(
+      JSON.stringify({
         arn: this.invocationInstance.context.invokedFunctionArn,
         requestId: this.invocationInstance.context.awsRequestId,
-        timestamp: this.invocationInstance.startTimestamp,
-      },
+        timestamp: this.invocationInstance.startTimestamp
+      }),
       'POST',
       merge(signingUrl, this.token)
-    ).then(res => {
+    ).then(async signingRes => {
       // Capture other statuses
-      if (res.status !== 201) {
-        this.log(`${res.status}: ${res.apiResponse}`);
+      if (signingRes.status !== 201) {
+        this.log(`${signingRes.status}: ${signingRes.apiResponse}`);
         return;
       }
       // use signature to send to S3
       try {
-        var { signedRequest, url } = JSON.parse(res.apiResponse);
+        const response = JSON.parse(signingRes.apiResponse);
+        signedRequest = response.signedRequest;
+        profileUrl = response.url;
       } catch (e) {
         this.log(`Error parsing signing API response: ${JSON.stringify(e)}`);
         return;
       }
-      request(output, 'PUT', urlLib.parse(signedRequest)).then(res => {
-        console.log(res);
+
+      // Add profile url to report
+      const { report } = this.invocationInstance.report;
+      report.profileUrl = profileUrl;
+
+      await request(output, 'PUT', urlLib.parse(signedRequest)).then(() => {
         this.log('end of hook');
       });
     });

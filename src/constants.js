@@ -4,6 +4,4 @@ const signingUrl = {
   path: '/dev'
 };
 
-export {
-  signingUrl
-};
+export { signingUrl };
