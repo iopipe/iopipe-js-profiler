@@ -1,4 +1,4 @@
-import v8profiler from 'v8-profiler';
+import v8profiler from 'v8-profiler-lambda';
 import * as urlLib from 'url';
 import get from 'lodash.get';
 import merge from 'lodash.merge';
