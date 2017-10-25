@@ -1,4 +1,4 @@
-export default function request(body, method, opts) {
+export default function request(body, method) {
   // Signing API request
   if (method == 'POST') {
     return {
@@ -8,11 +8,9 @@ export default function request(body, method, opts) {
         url: 'https://profileUrl'
       })
     };
-  } else {
-    // PUT request
-    return {
-      status: 200
-    };
   }
-  return;
+  // PUT request
+  return {
+    status: 200
+  };
 }

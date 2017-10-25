@@ -44,7 +44,9 @@ class ProfilerPlugin {
   async postInvoke() {
     let signedRequest;
     let profileUrl;
+    const { report } = this.invocationInstance.report;
     if (process.env.IOPIPE_DISABLE_PROFILING) return;
+
     const profile = v8profiler.stopProfiling();
     const output = await new Promise((resolve, reject) => {
       profile.export((err, data) => {
@@ -52,6 +54,7 @@ class ProfilerPlugin {
         err ? reject(err) : resolve(data);
       });
     });
+
     // Send data to signing API
     await request(
       JSON.stringify({
@@ -77,14 +80,13 @@ class ProfilerPlugin {
         return;
       }
 
-      // Add profile url to report
-      const { report } = this.invocationInstance.report;
-      report.profileUrl = profileUrl;
-
       await request(output, 'PUT', urlLib.parse(signedRequest)).then(res => {
         if (res.status != 200) {
           this.log(`${signingRes.status}: ${signingRes.apiResponse}`);
+          return;
         }
+        // Add profile url to report
+        report.profileUrl = profileUrl;
       });
     });
   }
