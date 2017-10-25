@@ -5,11 +5,6 @@ and AWS Lambda.
 
 ## Installation:
 
-For convenience, a pre-compiled version which works with AWS Lambda
-is available as the npm module `iopipe-plugin-profiler`. The source-version
-of this module is published as `iopipe-plugin-profiler-src`, see section *Building*
-for more details.
-
 With [yarn](https://yarnpkg.com/) (recommended) in project directory:
 
 `yarn add iopipe-plugin-profiler`
@@ -37,25 +32,19 @@ exports.handler = iopipe((event, context) => {
 
 #### `recSamples` (bool: optional = true)
 
+Record samples, defaults to true.
+
 #### `sampleRate` (number: optional = 1000)
+
+Change the sampling interval, in microseconds. Defaults to 1000us.
 
 #### `debug` (bool: optional = false)
 
 Show debugging logs.
 
-## Building
+## Environment Variables
 
-It requires a C-based extension to be compiled and loaded. Compilation
-of this should be done such that it is compatible with the AWS Lambda
-container filesystem, we have published [awslambda-npm-install](https://github.com/iopipe/awslambda-npm-install)
-to simplify the compilation process.
-
-Simply run `awslambda-npm-install` to build binary dependencies into `node_modules`.
-Further information on the build and publishing process will be documented as it develops.
-
-This module is designed for both local development, and for deploying
-on AWS Lambda, using separately compiled C extensions for NodeJS/v8.
-
+To disable profiling via environment variable, set `IOPIPE_DISABLE_PROFILING` to true in your environment.
 
 ## License
 
