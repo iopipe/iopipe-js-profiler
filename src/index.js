@@ -1,7 +1,6 @@
 import v8profiler from 'v8-profiler-lambda';
 import * as urlLib from 'url';
 import get from 'lodash.get';
-import merge from 'lodash.merge';
 import request from './request';
 import { signingUrl } from './constants';
 
@@ -41,54 +40,42 @@ class ProfilerPlugin {
     v8profiler.startProfiling(undefined, this.config.recSamples);
   }
 
-  async postInvoke() {
-    let signedRequest;
-    let profileUrl;
-    const { report } = this.invocationInstance.report;
-    if (process.env.IOPIPE_DISABLE_PROFILING) return;
-
-    const profile = v8profiler.stopProfiling();
-    const output = await new Promise((resolve, reject) => {
-      profile.export((err, data) => {
-        profile.delete();
-        err ? reject(err) : resolve(data);
-      });
-    });
-
-    // Send data to signing API
-    await request(
+  async getSignedUrl(obj = this.invocationInstance) {
+    const { startTimestamp, context = {} } = obj;
+    const signingRes = await request(
       JSON.stringify({
-        arn: this.invocationInstance.context.invokedFunctionArn,
-        requestId: this.invocationInstance.context.awsRequestId,
-        timestamp: this.invocationInstance.startTimestamp
+        arn: context.invokedFunctionArn,
+        requestId: context.awsRequestId,
+        timestamp: startTimestamp
       }),
       'POST',
-      merge(signingUrl, this.token)
-    ).then(async signingRes => {
-      // Capture other statuses
-      if (signingRes.status !== 201) {
-        this.log(`${signingRes.status}: ${signingRes.apiResponse}`);
-        return;
-      }
-      // use signature to send to S3
-      try {
-        const response = JSON.parse(signingRes.apiResponse);
-        signedRequest = response.signedRequest;
-        profileUrl = response.url;
-      } catch (e) {
-        this.log(`Error parsing signing API response: ${JSON.stringify(e)}`);
-        return;
-      }
+      signingUrl,
+      this.token
+    );
 
-      await request(output, 'PUT', urlLib.parse(signedRequest)).then(res => {
-        if (res.status != 200) {
-          this.log(`${signingRes.status}: ${signingRes.apiResponse}`);
-          return;
-        }
-        // Add profile url to report
-        report.profileUrl = profileUrl;
+    // Parse response to get signed url
+    const response = JSON.parse(signingRes);
+    return response.signedRequest;
+  }
+
+  async postInvoke() {
+    try {
+      if (process.env.IOPIPE_DISABLE_PROFILING) return;
+
+      const profile = v8profiler.stopProfiling();
+      const output = await new Promise((resolve, reject) => {
+        profile.export((err, data) => {
+          profile.delete();
+          err ? reject(err) : resolve(data);
+        });
       });
-    });
+
+      const signedRequestURL = await this.getSignedUrl();
+
+      await request(output, 'PUT', urlLib.parse(signedRequestURL));
+    } catch (e) {
+      this.log(e);
+    }
   }
 }
 

@@ -1,7 +1,7 @@
 import https from 'https';
 
-export default function request(body, method, opts) {
-  const { hostname, path, token } = opts;
+export default function request(body, method, opts, authorizationHeader) {
+  const { hostname, path } = opts;
   const requestOptions = {
     hostname,
     path,
@@ -9,9 +9,9 @@ export default function request(body, method, opts) {
     method: method
   };
 
-  if (token) {
+  if (authorizationHeader) {
     requestOptions['headers'] = {
-      authorization: token
+      authorization: authorizationHeader
     };
   }
   requestOptions['headers'] = requestOptions.headers || {};
@@ -26,7 +26,14 @@ export default function request(body, method, opts) {
         });
 
         res.on('end', () => {
-          resolve({ status: res.statusCode, apiResponse });
+          if (res.statusCode < 200 || res.statusCode > 201) {
+            reject(
+              new Error(
+                `Error getting signed url, ${res.statusCode}, ${apiResponse}`
+              )
+            );
+          }
+          resolve(apiResponse);
         });
       })
       .on('error', err => {

@@ -51,7 +51,6 @@
     "aws-sdk": "^2.109.0",
     "iopipe": "^1.0.1",
     "lodash.get": "^4.4.2",
-    "lodash.merge": "^4.6.0",
     "v8-profiler-lambda": "iopipe/v8-profiler-lambda"
   }
 }
