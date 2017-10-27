@@ -2,7 +2,7 @@ import v8profiler from 'v8-profiler-lambda';
 import * as urlLib from 'url';
 import get from 'lodash.get';
 import request from './request';
-import { signingUrl } from './constants';
+import { getDnsPromise } from './dns';
 
 const pkg = require('../package.json');
 
@@ -12,11 +12,14 @@ const defaultConfig = {
   debug: false
 };
 
+const signingUrlHostname = 'signer.iopipe.com';
+
 class ProfilerPlugin {
   constructor(pluginConfig = defaultConfig, invocationInstance) {
     this.invocationInstance = invocationInstance;
     this.token = { token: get(this.invocationInstance, 'config.clientId') };
     this.config = Object.assign({}, defaultConfig, pluginConfig);
+    this.signingUrlIp = getDnsPromise(signingUrlHostname);
 
     this.hooks = {
       'pre:invoke': this.preInvoke.bind(this),
@@ -36,6 +39,8 @@ class ProfilerPlugin {
   // Send data to signing API, which will enable the data to be uploaded to S3
   preInvoke() {
     if (process.env.IOPIPE_DISABLE_PROFILING) return;
+    // reset DNS in case of update
+    this.signingUrlIp = getDnsPromise(signingUrlHostname);
     v8profiler.setSamplingInterval(this.config.sampleRate);
     v8profiler.startProfiling(undefined, this.config.recSamples);
   }
@@ -49,7 +54,11 @@ class ProfilerPlugin {
         timestamp: startTimestamp
       }),
       'POST',
-      signingUrl,
+      {
+        ipAddress: await this.signingUrlIp,
+        hostname: signingUrlHostname,
+        path: '/'
+      },
       this.token
     );
 
