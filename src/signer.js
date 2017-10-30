@@ -12,7 +12,7 @@ export default function getSignerHostname() {
   if (supportedRegions.indexOf(process.env.AWS_REGION) > -1) {
     region = process.env.AWS_REGION;
   } else {
-    region = 'us-west-2'
+    region = 'us-west-2';
   }
   return `signer.${region}.iopipe.com`;
 }

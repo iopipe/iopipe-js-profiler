@@ -16,8 +16,8 @@ describe('configuring Signer hostname', () => {
     process.env.AWS_REGION = 'eu-west-1';
     let euWest1Signer = getSignerHostname();
 
-    process.env.AWS_REGION = 'us-east-2';
-    let east1URL = getSignerHostname();
+    process.env.AWS_REGION = 'us-east-1';
+    let east1Signer = getSignerHostname();
     process.env.AWS_REGION = 'us-east-2';
     let east2Signer = getSignerHostname();
     process.env.AWS_REGION = 'us-west-1';
@@ -27,6 +27,7 @@ describe('configuring Signer hostname', () => {
 
     expect(apSoutheast2Signer).toBe('signer.ap-southeast-2.iopipe.com');
     expect(euWest1Signer).toBe('signer.eu-west-1.iopipe.com');
+    expect(east1Signer).toBe('signer.us-east-1.iopipe.com');
     expect(east2Signer).toBe('signer.us-east-2.iopipe.com');
     expect(west1Signer).toBe('signer.us-west-1.iopipe.com');
     expect(west2Signer).toBe('signer.us-west-2.iopipe.com');
