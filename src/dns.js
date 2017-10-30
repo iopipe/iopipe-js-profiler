@@ -1,6 +1,6 @@
 import dns from 'dns';
 
-function getDnsPromise(host) {
+export default function getDnsPromise(host) {
   return new Promise((resolve, reject) => {
     dns.lookup(host, (err, address) => {
       if (err) {
@@ -10,5 +10,3 @@ function getDnsPromise(host) {
     });
   });
 }
-
-export { getDnsPromise };

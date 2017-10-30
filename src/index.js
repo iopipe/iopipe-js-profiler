@@ -2,7 +2,8 @@ import v8profiler from 'v8-profiler-lambda';
 import * as urlLib from 'url';
 import get from 'lodash.get';
 import request from './request';
-import { getDnsPromise } from './dns';
+import getSignerHostname from './signer';
+import getDnsPromise from './dns';
 
 const pkg = require('../package.json');
 
@@ -19,7 +20,7 @@ class ProfilerPlugin {
     this.invocationInstance = invocationInstance;
     this.token = { token: get(this.invocationInstance, 'config.clientId') };
     this.config = Object.assign({}, defaultConfig, pluginConfig);
-    this.signingUrlIp = getDnsPromise(signingUrlHostname);
+    this.signingUrlIp = getDnsPromise(getSignerHostname());
 
     this.hooks = {
       'pre:invoke': this.preInvoke.bind(this),
