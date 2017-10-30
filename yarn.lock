@@ -1993,9 +1993,9 @@ invert-kv@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/invert-kv/-/invert-kv-1.0.0.tgz#104a8e4aaca6d3d8cd157a8ef8bfab2d7a3ffdb6"
 
-iopipe@^1.0.1:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/iopipe/-/iopipe-1.1.0.tgz#f98bbb3f676089594f1f48bfc631c1ef41e496e2"
+iopipe@^1.2.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/iopipe/-/iopipe-1.2.0.tgz#eeef4c9041848ea18c25f0c55139046fd877412e"
 
 is-arrayish@^0.2.1:
   version "0.2.1"
