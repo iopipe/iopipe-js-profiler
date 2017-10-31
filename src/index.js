@@ -21,6 +21,7 @@ class ProfilerPlugin {
     this.token = { token: get(this.invocationInstance, 'config.clientId') };
     this.config = Object.assign({}, defaultConfig, pluginConfig);
     this.signingUrlIp = getDnsPromise(getSignerHostname());
+    this.enabled = !!process.env.IOPIPE_DISABLE_PROFILING;
 
     this.hooks = {
       'pre:invoke': this.preInvoke.bind(this),
@@ -34,12 +35,22 @@ class ProfilerPlugin {
   }
 
   get meta() {
-    return { name: pkg.name, version: pkg.version, homepage: pkg.homepage };
+    return {
+      name: pkg.name,
+      version: pkg.version,
+      homepage: pkg.homepage,
+      enabled: this.enabled
+    };
   }
 
   // Send data to signing API, which will enable the data to be uploaded to S3
   preInvoke() {
-    if (process.env.IOPIPE_DISABLE_PROFILING) return;
+    if (process.env.IOPIPE_DISABLE_PROFILING) {
+      this.enabled = false;
+      return;
+    }
+    // otherwise we're enabled
+    this.enabled = true;
     // reset DNS in case of update
     this.signingUrlIp = getDnsPromise(signingUrlHostname);
     v8profiler.setSamplingInterval(this.config.sampleRate);
