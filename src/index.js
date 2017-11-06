@@ -2,6 +2,7 @@ import v8profiler from 'v8-profiler-lambda';
 import * as urlLib from 'url';
 import get from 'lodash.get';
 import request from './request';
+import getEnabledStatus from './enabled';
 import getSignerHostname from './signer';
 import getDnsPromise from './dns';
 
@@ -10,6 +11,7 @@ const pkg = require('../package.json');
 const defaultConfig = {
   recSamples: true,
   sampleRate: 1000,
+  enabled: false,
   debug: false
 };
 
@@ -21,7 +23,7 @@ class ProfilerPlugin {
     this.token = { token: get(this.invocationInstance, 'config.clientId') };
     this.config = Object.assign({}, defaultConfig, pluginConfig);
     this.signingUrlIp = getDnsPromise(getSignerHostname());
-    this.enabled = !!process.env.IOPIPE_DISABLE_PROFILING;
+    this.enabled = getEnabledStatus(this.config.enabled);
 
     this.hooks = {
       'pre:invoke': this.preInvoke.bind(this),
@@ -45,10 +47,7 @@ class ProfilerPlugin {
 
   // Send data to signing API, which will enable the data to be uploaded to S3
   preInvoke() {
-    if (process.env.IOPIPE_DISABLE_PROFILING) {
-      this.enabled = false;
-      return;
-    }
+    if (!getEnabledStatus(this.enabled)) return;
     // otherwise we're enabled
     this.enabled = true;
     // reset DNS in case of update
@@ -81,7 +80,7 @@ class ProfilerPlugin {
 
   async postInvoke() {
     try {
-      if (process.env.IOPIPE_DISABLE_PROFILING) return;
+      if (!getEnabledStatus(this.enabled)) return;
 
       const profile = v8profiler.stopProfiling();
       const output = await new Promise((resolve, reject) => {
