@@ -1,7 +1,7 @@
 {
   "name": "iopipe-plugin-profiler",
-  "version": "0.1.0",
-  "description": "IOpipe plugin for profiling",
+  "version": "1.0.0",
+  "description": "IOpipe plugin for running the v8 profiler on your functions",
   "main": "dist/index.js",
   "scripts": {
     "babel": "babel src --out-dir dist --ignore **/*.test.js,**/__mocks__/**",
