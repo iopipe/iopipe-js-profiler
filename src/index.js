@@ -15,8 +15,6 @@ const defaultConfig = {
   debug: false
 };
 
-const signingUrlHostname = 'signer.iopipe.com';
-
 class ProfilerPlugin {
   constructor(pluginConfig = defaultConfig, invocationInstance) {
     this.invocationInstance = invocationInstance;
@@ -51,7 +49,7 @@ class ProfilerPlugin {
     // otherwise we're enabled
     this.enabled = true;
     // reset DNS in case of update
-    this.signingUrlIp = getDnsPromise(signingUrlHostname);
+    this.signingUrlIp = getDnsPromise(getSignerHostname());
     v8profiler.setSamplingInterval(this.config.sampleRate);
     v8profiler.startProfiling(undefined, this.config.recSamples);
   }
@@ -67,7 +65,7 @@ class ProfilerPlugin {
       'POST',
       {
         ipAddress: await this.signingUrlIp,
-        hostname: signingUrlHostname,
+        hostname: getSignerHostname(),
         path: '/'
       },
       this.token
