@@ -4,7 +4,6 @@ import get from 'lodash.get';
 import request from './request';
 import getEnabledStatus from './enabled';
 import getSignerHostname from './signer';
-import getDnsPromise from './dns';
 
 const pkg = require('../package.json');
 
@@ -18,9 +17,8 @@ const defaultConfig = {
 class ProfilerPlugin {
   constructor(pluginConfig = defaultConfig, invocationInstance) {
     this.invocationInstance = invocationInstance;
-    this.token = { token: get(this.invocationInstance, 'config.clientId') };
+    this.token = get(this.invocationInstance, 'config.clientId');
     this.config = Object.assign({}, defaultConfig, pluginConfig);
-    this.signingUrlIp = getDnsPromise(getSignerHostname());
     this.enabled = getEnabledStatus(this.config.enabled);
 
     this.hooks = {
@@ -48,8 +46,6 @@ class ProfilerPlugin {
     if (!getEnabledStatus(this.enabled)) return;
     // otherwise we're enabled
     this.enabled = true;
-    // reset DNS in case of update
-    this.signingUrlIp = getDnsPromise(getSignerHostname());
     v8profiler.setSamplingInterval(this.config.sampleRate);
     v8profiler.startProfiling(undefined, this.config.recSamples);
   }
@@ -64,7 +60,6 @@ class ProfilerPlugin {
       }),
       'POST',
       {
-        ipAddress: await this.signingUrlIp,
         hostname: getSignerHostname(),
         path: '/'
       },
