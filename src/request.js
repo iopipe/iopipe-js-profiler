@@ -1,10 +1,9 @@
 import https from 'https';
 
 export default function request(body, method, opts, authorizationHeader) {
-  const { ipAddress, hostname, path } = opts;
+  const { hostname, path } = opts;
   const requestOptions = {
-    hostname: ipAddress || hostname,
-    servername: hostname,
+    hostname: hostname,
     path,
     port: 443,
     method: method
