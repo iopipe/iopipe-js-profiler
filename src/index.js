@@ -92,7 +92,7 @@ class ProfilerPlugin {
   }
 }
 
-export default function instantiateProfilerPlugin(pluginOpts) {
+module.exports = function instantiateProfilerPlugin(pluginOpts) {
   return invocationInstance => {
     return new ProfilerPlugin(pluginOpts, invocationInstance);
   };
