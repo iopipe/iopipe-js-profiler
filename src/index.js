@@ -29,7 +29,7 @@ class ProfilerPlugin {
   }
 
   log(logline) {
-    this.config.debug ? console.log(logline) : null;
+    this.config.debug ? console.log(`iopipe-plugin-profiler::${logline}`) : null;
   }
 
   get meta() {
@@ -52,6 +52,8 @@ class ProfilerPlugin {
 
   async getSignedUrl(obj = this.invocationInstance) {
     const { startTimestamp, context = {} } = obj;
+    const hostname = getSignerHostname();
+    this.log(`Requesting signed url from ${hostname}`);
     const signingRes = await request(
       JSON.stringify({
         arn: context.invokedFunctionArn,
@@ -60,7 +62,7 @@ class ProfilerPlugin {
       }),
       'POST',
       {
-        hostname: getSignerHostname(),
+        hostname,
         path: '/'
       },
       this.token
