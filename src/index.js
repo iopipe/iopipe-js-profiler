@@ -29,7 +29,9 @@ class ProfilerPlugin {
   }
 
   log(logline) {
-    this.config.debug ? console.log(`iopipe-plugin-profiler::${logline}`) : null;
+    this.config.debug
+      ? console.log(`iopipe-plugin-profiler::${logline}`)
+      : null;
   }
 
   get meta() {
@@ -98,4 +100,4 @@ module.exports = function instantiateProfilerPlugin(pluginOpts) {
   return invocationInstance => {
     return new ProfilerPlugin(pluginOpts, invocationInstance);
   };
-}
+};
