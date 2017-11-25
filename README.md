@@ -30,7 +30,7 @@ exports.handler = iopipe((event, context) => {
 
 ## Config
 
-#### `enabled` (bool: optional = true)
+#### `enabled` (bool: optional = false)
 
 By default, this plugin will _not_ run the profiler. You must enable profiling on your function either by setting this variable, or setting `IOPIPE_ENABLE_PROFILER=true` in your environment. The environment variable setting (either true or unset) takes precedence over plugin config.
 
