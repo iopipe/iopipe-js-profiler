@@ -80,16 +80,12 @@ class ProfilerPlugin {
       if (!getEnabledStatus(this.enabled)) return;
 
       const profile = v8profiler.stopProfiling();
-      const output = await new Promise((resolve, reject) => {
-        profile.export((err, data) => {
-          profile.delete();
-          err ? reject(err) : resolve(data);
-        });
-      });
-
       const signedRequestURL = await this.getSignedUrl();
-
-      await request(output, 'PUT', urlLib.parse(signedRequestURL));
+      profile
+        .export(async function(err, output) {
+          await request(output, 'PUT', urlLib.parse(signedRequestURL));
+          profile.delete();
+        });
     } catch (e) {
       this.log(e);
     }
