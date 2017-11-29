@@ -13,8 +13,8 @@ module.exports = {
   },
   rules: {
     /**
- * Strict mode
- */
+     * Strict mode
+     */
     'prettier/prettier': [
       'error',
       {
@@ -71,8 +71,8 @@ module.exports = {
     yoda: 2, // http://eslint.org/docs/rules/yoda
 
     /**
- * Style
- */
+     * Style
+     */
     indent: 'off', // http://eslint.org/docs/rules/
     'brace-style': [
       2, // http://eslint.org/docs/rules/brace-style
@@ -134,7 +134,14 @@ module.exports = {
       }
     ],
     'keyword-spacing': 2, // http://eslint.org/docs/rules/keyword-spacing
-    'space-before-function-paren': [2, 'never'], // http://eslint.org/docs/rules/space-before-function-paren
+    'space-before-function-paren': [
+      2,
+      {
+        anonymous: 'always',
+        named: 'never',
+        asyncArrow: 'always'
+      }
+    ], // http://eslint.org/docs/rules/space-before-function-paren
     'space-infix-ops': 2 // http://eslint.org/docs/rules/space-infix-ops
   }
 };
