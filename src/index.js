@@ -81,11 +81,10 @@ class ProfilerPlugin {
 
       const profile = v8profiler.stopProfiling();
       const signedRequestURL = await this.getSignedUrl();
-      profile
-        .export(async function(err, output) {
-          await request(output, 'PUT', urlLib.parse(signedRequestURL));
-          profile.delete();
-        });
+      profile.export(async function sendOutput(err, output) {
+        await request(output, 'PUT', urlLib.parse(signedRequestURL));
+        profile.delete();
+      });
     } catch (e) {
       this.log(e);
     }
