@@ -4,7 +4,11 @@ import iopipe from 'iopipe';
 import Profiler from './index';
 import pkg from '../package.json';
 
+jest.mock('v8-profiler-lambda');
 jest.mock('./request');
+
+import { settings as profilerRuntime } from 'v8-profiler-lambda';
+import { putData } from './request';
 
 test('Can instantiate plugin with or without options', () => {
   const plugin = Profiler();
@@ -36,9 +40,10 @@ test('Can instantiate plugin with or without options', () => {
 test('works with iopipe', async function runTest() {
   const iopipeInstance = iopipe({
     token: 'test',
-    plugins: [Profiler({ debug: true })]
+    plugins: [Profiler({ debug: true, enabled: true })]
   });
   const wrappedFn = iopipeInstance((event, context) => {
+    expect(profilerRuntime.running).toBe(true);
     context.succeed('wow');
   });
   const context = mockContext({ functionName: 'test-1' });
@@ -46,4 +51,7 @@ test('works with iopipe', async function runTest() {
 
   const val = await context.Promise;
   expect(val).toBe('wow');
+  expect(profilerRuntime.running).toBe(false);
+  expect(putData.length).toBe(1);
+  expect(putData[0]).toBe('woot');
 });
