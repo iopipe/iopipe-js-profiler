@@ -1,5 +1,3 @@
-import _ from 'lodash';
-
 export const settings = {
   sampleRate: 1,
   running: false,
@@ -24,7 +22,7 @@ function stopProfiling() {
       cb(undefined, 'woot');
     },
     delete: () => {
-      settings.profiles = _.dropRight(settings.profiles, 1);
+      settings.profiles.pop();
     }
   };
 }
