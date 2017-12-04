@@ -15,12 +15,12 @@ With npm in project directory:
 
 Then include the plugin with IOpipe in your serverless function:
 
-```
+```js
 const iopipeLib = require('iopipe');
 const profiler = require('iopipe-plugin-profiler');
 
 const iopipe = iopipeLib({
-  plugins: [profiler()]
+  plugins: [profiler({ enabled: true })]
 });
 
 exports.handler = iopipe((event, context) => {
