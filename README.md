@@ -7,17 +7,17 @@ and AWS Lambda.
 
 With [yarn](https://yarnpkg.com/) (recommended) in project directory:
 
-`yarn add iopipe-plugin-profiler`
+`yarn add @iopipe/profiler`
 
 With npm in project directory:
 
-`npm install iopipe-plugin-profiler`
+`npm install @iopipe/profiler`
 
 Then include the plugin with IOpipe in your serverless function:
 
 ```js
 const iopipeLib = require('iopipe');
-const profiler = require('iopipe-plugin-profiler');
+const profiler = require('@iopipe/profiler');
 
 const iopipe = iopipeLib({
   plugins: [profiler({ enabled: true })]

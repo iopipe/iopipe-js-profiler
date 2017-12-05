@@ -27,7 +27,7 @@ test('Can instantiate plugin with or without options', () => {
   expect(inst.config.recSamples).toBe(true);
   expect(inst.config.sampleRate).toBe(1000);
   expect(inst.config.debug).toBe(false);
-  expect(inst.meta.name).toBe('iopipe-plugin-profiler');
+  expect(inst.meta.name).toBe('@iopipe/profiler');
   expect(inst.meta.version).toBe(pkg.version);
   expect(inst.meta.homepage).toBe(
     'https://github.com/iopipe/iopipe-plugin-profiler#readme'
