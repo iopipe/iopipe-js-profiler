@@ -20,6 +20,7 @@ const iopipeLib = require('iopipe');
 const profiler = require('@iopipe/profiler');
 
 const iopipe = iopipeLib({
+  token: 'TOKEN_HERE',
   plugins: [profiler({ enabled: true })]
 });
 
