@@ -53,5 +53,6 @@ test('works with iopipe', async function runTest() {
   expect(val).toBe('wow');
   expect(profilerRuntime.running).toBe(false);
   expect(putData.length).toBe(1);
-  expect(putData[0]).toBe('woot');
+  // Test that the data returned has the zip format magic bytes.
+  expect(putData[0].slice(0, 4)).toEqual(Buffer([80, 75, 3, 4]));
 });

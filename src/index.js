@@ -2,8 +2,9 @@ import v8profiler from 'v8-profiler-lambda';
 import * as urlLib from 'url';
 import get from 'lodash.get';
 import request from './request';
-import getEnabledStatus from './enabled';
+import * as enabled from './enabled';
 import getSignerHostname from './signer';
+import * as archiver from 'archiver';
 
 const pkg = require('../package.json');
 
@@ -11,6 +12,7 @@ const defaultConfig = {
   recSamples: true,
   sampleRate: 1000,
   enabled: false,
+  heapSnapshot: false,
   debug: false
 };
 
@@ -19,7 +21,12 @@ class ProfilerPlugin {
     this.invocationInstance = invocationInstance;
     this.token = get(this.invocationInstance, 'config.clientId');
     this.config = Object.assign({}, defaultConfig, pluginConfig);
-    this.enabled = getEnabledStatus(this.config.enabled);
+    this.profilerEnabled = enabled.getProfilerEnabledStatus(
+      this.config.enabled
+    );
+    this.heapsnapshotEnabled = enabled.getHeapSnapshotEnabledStatus(
+      this.config.heapSnapshot
+    );
 
     this.hooks = {
       'pre:invoke': this.preInvoke.bind(this),
@@ -37,15 +44,15 @@ class ProfilerPlugin {
       name: pkg.name,
       version: pkg.version,
       homepage: pkg.homepage,
-      enabled: this.enabled
+      enabled: this.profilerEnabled || this.heapsnapshotEnabled
     };
   }
 
   // Send data to signing API, which will enable the data to be uploaded to S3
   preInvoke() {
-    if (!getEnabledStatus(this.enabled)) return;
+    if (!enabled.getProfilerEnabledStatus(this.profilerEnabled)) return;
     // otherwise we're enabled
-    this.enabled = true;
+    this.profilerEnabled = true;
     v8profiler.setSamplingInterval(this.config.sampleRate);
     v8profiler.startProfiling(undefined, this.config.recSamples);
   }
@@ -56,7 +63,9 @@ class ProfilerPlugin {
     this.log(`Requesting signed url from ${hostname}`);
     const signingRes = await request(
       JSON.stringify({
-        arn: context.invokedFunctionArn,
+        arn:
+          context.invokedFunctionArn ||
+          'arn:aws:lambda:us-east-1:554407330061:function:slackbot-imgdesc-dev-event',
         requestId: context.awsRequestId,
         timestamp: startTimestamp
       }),
@@ -74,18 +83,40 @@ class ProfilerPlugin {
   }
 
   async postInvoke() {
-    try {
-      if (!getEnabledStatus(this.enabled)) return;
+    if (!(this.profilerEnabled || this.heapsnapshotEnabled)) return false;
 
-      const profile = v8profiler.stopProfiling();
-      const signedRequestURL = await this.getSignedUrl();
-      profile.export(async function sendOutput(err, output) {
-        await request(output, 'PUT', urlLib.parse(signedRequestURL));
-        profile.delete();
-      });
-    } catch (e) {
-      this.log(e);
-    }
+    return new Promise(async resolve => {
+      try {
+        const signedRequestURL = await this.getSignedUrl();
+        const archive = archiver.default('zip');
+        const archiveBuffer = [];
+
+        archive.on('data', chunk => {
+          archiveBuffer.push(chunk);
+        });
+        archive.on('finish', async () => {
+          await request(
+            Buffer.concat(archiveBuffer),
+            'PUT',
+            urlLib.parse(signedRequestURL)
+          );
+          resolve();
+        });
+
+        if (enabled.getProfilerEnabledStatus(this.profilerEnabled)) {
+          const profile = v8profiler.stopProfiling();
+          archive.append(profile.export(), { name: 'profile.cpuprofile' });
+        }
+        if (enabled.getHeapSnapshotEnabledStatus(this.heapsnapshotEnabled)) {
+          const heap = v8profiler.takeSnapshot();
+          archive.append(heap.export(), { name: 'profile.heapsnapshot' });
+        }
+        archive.finalize();
+      } catch (e) {
+        console.log('@iopipe/profiler::Error in upload:', e);
+        resolve();
+      }
+    });
   }
 }
 

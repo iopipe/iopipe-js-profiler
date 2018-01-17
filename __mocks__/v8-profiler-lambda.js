@@ -1,8 +1,18 @@
+const { Readable } = require('stream');
+
+class MockReadable extends Readable {
+  constructor(options) {
+    super(options);
+  }
+  _read(size) { this.push(null); }
+}
+
 export const settings = {
   sampleRate: 1,
   running: false,
   recSamples: false,
-  profiles: []
+  profiles: [],
+  heapProfiles: []
 };
 
 function setSamplingInterval(sampleRate) {
@@ -19,7 +29,7 @@ function stopProfiling() {
   return {
     export: cb => {
       settings.profiles.push(1);
-      cb(undefined, 'woot');
+      return new MockReadable();
     },
     delete: () => {
       settings.profiles.pop();
@@ -27,8 +37,21 @@ function stopProfiling() {
   };
 }
 
+function takeSnapshot() {
+  return {
+    export: cb => {
+      settings.heapProfiles.push(1);
+      return new MockReadable();
+    },
+    delete: () => {
+      settings.heapProfiles.pop();
+    }
+  };
+}
+
 export default {
   setSamplingInterval,
   startProfiling,
-  stopProfiling
+  stopProfiling,
+  takeSnapshot
 };
