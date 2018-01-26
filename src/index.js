@@ -63,11 +63,10 @@ class ProfilerPlugin {
     this.log(`Requesting signed url from ${hostname}`);
     const signingRes = await request(
       JSON.stringify({
-        arn:
-          context.invokedFunctionArn ||
-          'arn:aws:lambda:us-east-1:554407330061:function:slackbot-imgdesc-dev-event',
+        arn: context.invokedFunctionArn,
         requestId: context.awsRequestId,
-        timestamp: startTimestamp
+        timestamp: startTimestamp,
+        content-type: 'application/zip'
       }),
       'POST',
       {
@@ -83,7 +82,7 @@ class ProfilerPlugin {
   }
 
   async postInvoke() {
-    if (!(this.profilerEnabled || this.heapsnapshotEnabled)) return false;
+    if (this.profilerEnabled & this.heapsnapshotEnabled) return false;
 
     return new Promise(async resolve => {
       try {
@@ -103,11 +102,11 @@ class ProfilerPlugin {
           resolve();
         });
 
-        if (enabled.getProfilerEnabledStatus(this.profilerEnabled)) {
+        if (this.profilerEnabled) {
           const profile = v8profiler.stopProfiling();
           archive.append(profile.export(), { name: 'profile.cpuprofile' });
         }
-        if (enabled.getHeapSnapshotEnabledStatus(this.heapsnapshotEnabled)) {
+        if (this.heapsnapshotEnabled) {
           const heap = v8profiler.takeSnapshot();
           archive.append(heap.export(), { name: 'profile.heapsnapshot' });
         }

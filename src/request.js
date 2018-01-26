@@ -15,14 +15,7 @@ export default function request(body, method, opts, authorizationHeader) {
     };
   }
   requestOptions['headers'] = requestOptions.headers || {};
-
-  /* Not a stream... */
-  if (!body.pipe) {
-    requestOptions.headers['content-length'] = Buffer.byteLength(body);
-  } else {
-    requestOptions.headers['Transfer-Encoding'] = 'chunked';
-  }
-
+  requestOptions.headers['content-length'] = Buffer.byteLength(body);
   return new Promise((resolve, reject) => {
     const req = https
       .request(requestOptions, res => {
@@ -47,14 +40,7 @@ export default function request(body, method, opts, authorizationHeader) {
         reject(err);
       });
 
-    if (body.pipe) {
-      body.pipe(req);
-      body.on('end', () => {
-        req.end();
-      });
-    } else {
-      req.write(body);
-      req.end();
-    }
+    req.write(body);
+    req.end();
   });
 }
