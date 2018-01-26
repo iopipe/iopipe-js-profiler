@@ -66,7 +66,7 @@ class ProfilerPlugin {
         arn: context.invokedFunctionArn,
         requestId: context.awsRequestId,
         timestamp: startTimestamp,
-        content-type: 'application/zip'
+        content_type: 'application/zip'
       }),
       'POST',
       {
