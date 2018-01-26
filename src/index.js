@@ -27,6 +27,7 @@ class ProfilerPlugin {
     this.heapsnapshotEnabled = enabled.getHeapSnapshotEnabledStatus(
       this.config.heapSnapshot
     );
+    this.enabled = this.profilerEnabled || this.heapsnapshotEnabled;
 
     this.hooks = {
       'pre:invoke': this.preInvoke.bind(this),
@@ -44,17 +45,15 @@ class ProfilerPlugin {
       name: pkg.name,
       version: pkg.version,
       homepage: pkg.homepage,
-      enabled: this.profilerEnabled || this.heapsnapshotEnabled
+      enabled: this.enabled
     };
   }
 
-  // Send data to signing API, which will enable the data to be uploaded to S3
   preInvoke() {
-    if (!enabled.getProfilerEnabledStatus(this.profilerEnabled)) return;
-    // otherwise we're enabled
-    this.profilerEnabled = true;
-    v8profiler.setSamplingInterval(this.config.sampleRate);
-    v8profiler.startProfiling(undefined, this.config.recSamples);
+    if (this.profilerEnabled) {
+      v8profiler.setSamplingInterval(this.config.sampleRate);
+      v8profiler.startProfiling(undefined, this.config.recSamples);
+    }
   }
 
   async getSignedUrl(obj = this.invocationInstance) {
@@ -82,7 +81,7 @@ class ProfilerPlugin {
   }
 
   async postInvoke() {
-    if (this.profilerEnabled & this.heapsnapshotEnabled) return false;
+    if (!this.enabled) return false;
 
     return new Promise(async resolve => {
       try {
