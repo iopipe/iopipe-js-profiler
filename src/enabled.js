@@ -1,17 +1,19 @@
-function getProfilerEnabledStatus(enabledStatus) {
-  return (
-    enabledStatus ||
-    (process.env.IOPIPE_ENABLE_PROFILER === 'true' ||
-      process.env.IOPIPE_ENABLE_PROFILER === true)
-  );
-}
+export default function cmpConfigEnvBool(envKey, configKey) {
+  if (process.env[envKey] === undefined) return configKey;
+  const lcValue = process.env[envKey].toLowerCase();
 
-function getHeapSnapshotEnabledStatus(enabledStatus) {
-  return (
-    enabledStatus ||
-    (process.env.IOPIPE_ENABLE_HEAPSNAPSHOT === 'true' ||
-      process.env.IOPIPE_ENABLE_HEAPSNAPSHOT === true)
-  );
+  /* process.env has a setter that ensures the value is always a string */
+  /* env key explicitly set to false should override other config. */
+  switch (lcValue) {
+    case 'false':
+    case 'disable':
+    case 'disabled':
+      return false;
+    case 'true':
+    case 'enable':
+    case 'enabled':
+      return true;
+    default:
+      return configKey;
+  }
 }
-
-module.exports = { getProfilerEnabledStatus, getHeapSnapshotEnabledStatus };

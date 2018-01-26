@@ -4,6 +4,7 @@ class MockReadable extends Readable {
   constructor(options) {
     super(options);
   }
+  /* A readable is "done" when a null is sent. */
   _read(size) { this.push(null); }
 }
 
@@ -27,7 +28,7 @@ function startProfiling(name, recSamples) {
 function stopProfiling() {
   settings.running = false;
   return {
-    export: cb => {
+    export: () => {
       settings.profiles.push(1);
       return new MockReadable();
     },
@@ -39,7 +40,7 @@ function stopProfiling() {
 
 function takeSnapshot() {
   return {
-    export: cb => {
+    export: () => {
       settings.heapProfiles.push(1);
       return new MockReadable();
     },

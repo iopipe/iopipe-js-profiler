@@ -2,7 +2,7 @@ import v8profiler from 'v8-profiler-lambda';
 import * as urlLib from 'url';
 import get from 'lodash.get';
 import request from './request';
-import * as enabled from './enabled';
+import enabled from './enabled';
 import getSignerHostname from './signer';
 import * as archiver from 'archiver';
 
@@ -21,10 +21,12 @@ class ProfilerPlugin {
     this.invocationInstance = invocationInstance;
     this.token = get(this.invocationInstance, 'config.clientId');
     this.config = Object.assign({}, defaultConfig, pluginConfig);
-    this.profilerEnabled = enabled.getProfilerEnabledStatus(
+    this.profilerEnabled = enabled(
+      'IOPIPE_ENABLE_PROFILER',
       this.config.enabled
     );
-    this.heapsnapshotEnabled = enabled.getHeapSnapshotEnabledStatus(
+    this.heapsnapshotEnabled = enabled(
+      'IOPIPE_ENABLE_HEAPSNAPSHOT',
       this.config.heapSnapshot
     );
     this.enabled = this.profilerEnabled || this.heapsnapshotEnabled;
