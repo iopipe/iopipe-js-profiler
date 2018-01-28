@@ -123,7 +123,7 @@ class ProfilerPlugin {
         }
         archive.finalize();
       } catch (e) {
-        console.log('@iopipe/profiler::Error in upload:', e);
+        this.log('@iopipe/profiler::Error in upload:', e);
         resolve();
       }
     });
