@@ -89,12 +89,22 @@ class ProfilerPlugin {
       try {
         const signedRequestURL = await this.getSignedUrl();
         const archive = archiver.default('zip');
+
+        /* NodeJS's Buffer has a fixed-size heap allocation.
+
+           Here an Array, which has dynamic allocation,
+           is used to buffer (hold) data received from a stream
+           then used to construct a Buffer via Buffer.concat(Array),
+           a constructor of Buffer. */
         const archiveBuffer = [];
 
         archive.on('data', chunk => {
           archiveBuffer.push(chunk);
         });
         archive.on('finish', async () => {
+          /* Here uploads to S3 are incompatible with streams.
+             Chunked Encoding is not supported for uploads
+             to a pre-signed url. */
           await request(
             Buffer.concat(archiveBuffer),
             'PUT',
