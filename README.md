@@ -1,5 +1,7 @@
 # IOpipe Profiler Plugin
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/iopipe/iopipe-plugin-profiler.svg)](https://greenkeeper.io/)
+
 This is a profiler and tracing library for use with [IOpipe](https://iopipe.com)
 and AWS Lambda.
 
