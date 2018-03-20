@@ -56,3 +56,11 @@ test('works with iopipe', async function runTest() {
   // Test that the data returned has the zip format magic bytes.
   expect(putData[0].slice(0, 4)).toEqual(Buffer([80, 75, 3, 4]));
 });
+
+test('running post-invoke adds uploads to metadata', async function runTest() {
+  const plugin = Profiler({ enabled: true });
+  const inst = plugin({});
+  expect(_.isEmpty(inst.uploads)).toBeTruthy();
+  await inst.hooks['post:invoke']();
+  expect(inst.uploads[0]).toBe('this-is-a-token');
+});
