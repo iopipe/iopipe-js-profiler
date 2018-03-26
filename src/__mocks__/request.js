@@ -7,7 +7,8 @@ export default function request(body, method) {
     postData.push(body);
     return JSON.stringify({
       signedRequest: 'https://signingApi',
-      url: 'https://profileUrl'
+      url: 'https://profileUrl',
+      jwtAccess: 'this-is-a-token'
     });
   }
   // PUT request

@@ -30,6 +30,7 @@ class ProfilerPlugin {
       this.config.heapSnapshot
     );
     this.enabled = this.profilerEnabled || this.heapsnapshotEnabled;
+    this.uploads = [];
 
     this.hooks = {
       'pre:invoke': this.preInvoke.bind(this),
@@ -47,7 +48,8 @@ class ProfilerPlugin {
       name: pkg.name,
       version: pkg.version,
       homepage: pkg.homepage,
-      enabled: this.enabled
+      enabled: this.enabled,
+      uploads: this.uploads
     };
   }
 
@@ -79,6 +81,8 @@ class ProfilerPlugin {
 
     // Parse response to get signed url
     const response = JSON.parse(signingRes);
+    // attach uploads to plugin data
+    this.uploads.push(response.jwtAccess);
     return response.signedRequest;
   }
 
