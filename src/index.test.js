@@ -1,6 +1,6 @@
 import mockContext from 'aws-lambda-mock-context';
 import _ from 'lodash';
-import iopipe from 'iopipe';
+import iopipe from '@iopipe/core';
 import Profiler from './index';
 import pkg from '../package.json';
 
