@@ -16,7 +16,7 @@ With npm in project directory:
 Then include the plugin with IOpipe in your serverless function:
 
 ```js
-const iopipeLib = require('iopipe');
+const iopipeLib = require('@iopipe/iopipe');
 const profiler = require('@iopipe/profiler');
 
 const iopipe = iopipeLib({
