@@ -21,7 +21,7 @@ const profiler = require('@iopipe/profiler');
 
 const iopipe = iopipeLib({
   token: 'TOKEN_HERE',
-  plugins: [profiler({ enabled: true })]
+  plugins: [profiler({ enabled: true, heapSnapshot: true })]
 });
 
 exports.handler = iopipe((event, context) => {
@@ -34,6 +34,10 @@ exports.handler = iopipe((event, context) => {
 #### `enabled` (bool: optional = false)
 
 By default, this plugin will _not_ run the profiler. You must enable profiling on your function either by setting this variable, or setting `IOPIPE_ENABLE_PROFILER=true` in your environment. The environment variable setting (either true or unset) takes precedence over plugin config.
+
+#### `heapSnapshot` (bool: optional = false)
+
+By default, this plugin will not take heap snapshots. To enable heap snapshots, either set this value to true, or setting `IOPIPE_ENABLE_HEAPSNAPSHOT=true` in your environment. The environment variable setting (either true or unset) takes precedence over plugin config.
 
 #### `recSamples` (bool: optional = true)
 
