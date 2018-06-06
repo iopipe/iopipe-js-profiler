@@ -1,10 +1,11 @@
-import v8profiler from 'v8-profiler-lambda';
+import * as inspector from 'inspector';
 import * as urlLib from 'url';
 import get from 'lodash.get';
 import request from './request';
 import enabled from './enabled';
 import getSignerHostname from './signer';
 import * as archiver from 'archiver';
+import * as stream from 'stream';
 
 const pkg = require('../package.json');
 
@@ -36,6 +37,9 @@ class ProfilerPlugin {
       'pre:invoke': this.preInvoke.bind(this),
       'post:invoke': this.postInvoke.bind(this)
     };
+    this.inspector = new inspector.Session();
+    this.inspector.connect();
+
     return this;
   }
 
@@ -55,8 +59,16 @@ class ProfilerPlugin {
 
   preInvoke() {
     if (this.profilerEnabled) {
-      v8profiler.setSamplingInterval(this.config.sampleRate);
-      v8profiler.startProfiling(undefined, this.config.recSamples);
+      this.inspector.post(
+        'Profiler.setSamplingInterval',
+        this.config.sampleRate,
+        err => {
+          if (err) {
+            this.log(`Error from profiler::${err}`);
+          }
+          this.inspector.post('Profiler.start');
+        }
+      );
     }
   }
 
@@ -118,16 +130,35 @@ class ProfilerPlugin {
         });
 
         if (this.profilerEnabled) {
-          const profile = v8profiler.stopProfiling();
-          archive.append(profile.export(), { name: 'profile.cpuprofile' });
+          this.inspector.post('Profiler.stop', (err, { profile }) => {
+            archive.append(JSON.stringify(profile), {
+              name: 'profile.cpuprofile'
+            });
+          });
         }
+        const heap = new stream.PassThrough();
         if (this.heapsnapshotEnabled) {
-          const heap = v8profiler.takeSnapshot();
-          archive.append(heap.export(), { name: 'profile.heapsnapshot' });
+          this.inspector.post('HeapProfiler.takeHeapSnapshot', () => {
+            this.inspector.on(
+              'HeapProfiler.addHeapSnapshotChunk',
+              ({ chunk }) => {
+                heap.write(chunk);
+              }
+            );
+            this.inspector.on(
+              'HeapProfiler.reportHeapSnapshotProgress',
+              ([, , finished]) => {
+                if (finished) {
+                  heap.end();
+                  archive.finalize();
+                }
+              }
+            );
+            archive.append(heap, { name: 'profile.heapsnapshot' });
+          });
         }
-        archive.finalize();
       } catch (e) {
-        this.log('@iopipe/profiler::Error in upload:', e);
+        this.log('Error in upload:', e);
         resolve();
       }
     });
