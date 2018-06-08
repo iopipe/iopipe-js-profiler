@@ -162,7 +162,7 @@ class ProfilerPlugin {
           });
         }
       } catch (e) {
-        this.log('Error in upload:', e);
+        this.log(`Error in upload: ${e}`);
         resolve();
       }
     });
