@@ -178,23 +178,27 @@ class ProfilerPlugin {
         }
         if (this.heapsnapshotEnabled) {
           const heap = new stream.PassThrough();
-          this.inspector.post('HeapProfiler.takeHeapSnapshot', () => {
-            this.inspector.on(
-              'HeapProfiler.addHeapSnapshotChunk',
-              ({ chunk }) => {
-                heap.write(chunk);
+          this.inspector.on(
+            'HeapProfiler.reportHeapSnapshotProgress',
+            ([, , finished]) => {
+              if (finished) {
+                heap.end();
               }
-            );
-            this.inspector.on(
-              'HeapProfiler.reportHeapSnapshotProgress',
-              ([, , finished]) => {
-                if (finished) {
-                  heap.end();
-                }
-              }
-            );
-            archive.append(heap, { name: 'profile.heapsnapshot' });
-          });
+            }
+          );
+          this.inspector.on(
+            'HeapProfiler.addHeapSnapshotChunk',
+            ({ chunk }) => {
+              heap.write(chunk);
+            }
+          );
+          this.inspector.post(
+            'HeapProfiler.takeHeapSnapshot',
+            { reportProgress: true },
+            () => {
+              archive.append(heap, { name: 'profile.heapsnapshot' });
+            }
+          );
         }
       } catch (e) {
         this.log(`Error in upload: ${e}`);
