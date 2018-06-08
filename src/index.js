@@ -40,7 +40,6 @@ class ProfilerPlugin {
     this.inspector = new inspector.Session();
 
     // Enable the remote inspector (on localhost)
-    process.kill(process.pid, 'SIGUSR1');
 
     try {
       this.inspector.connect();
@@ -80,7 +79,7 @@ class ProfilerPlugin {
         }
         this.inspector.post(
           'Profiler.setSamplingInterval',
-          this.config.sampleRate,
+          { interval: this.config.sampleRate },
           err => {
             if (err) {
               this.log(`Error from profiler::${err}`);
@@ -153,19 +152,12 @@ class ProfilerPlugin {
           resolve();
         });
 
-        if (this.enabled) {
-          try {
-            this.inspector.connect();
-          } catch (err) {
-            this.log(`warning connecting to inspector: ${err}`);
-          }
-        }
-
         if (this.profilerEnabled) {
           this.inspector.post('Profiler.stop', (err, { profile }) => {
             archive.append(JSON.stringify(profile), {
               name: 'profile.cpuprofile'
             });
+            archive.finalize();
           });
         }
         const heap = new stream.PassThrough();
