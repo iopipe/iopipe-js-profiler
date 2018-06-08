@@ -62,8 +62,15 @@ class ProfilerPlugin {
   }
 
   preInvoke() {
+    if (this.heapsnapshotEnabled) {
+      this.inspector.post('HeapProfiler.enable', err => {
+        if (err) {
+          this.log(`Error enabling profiler::${err}`);
+        }
+      });
+    }
     if (this.profilerEnabled) {
-      this.inspector.post('Profiler.enabled', errEnable => {
+      this.inspector.post('Profiler.enable', errEnable => {
         if (errEnable) {
           this.log(`Error enabling profiler::${errEnable}`);
         }
@@ -74,7 +81,11 @@ class ProfilerPlugin {
             if (err) {
               this.log(`Error from profiler::${err}`);
             }
-            this.inspector.post('Profiler.start');
+            this.inspector.post('Profiler.start', errStart => {
+              if (errStart) {
+                this.log(`Error starting profiler::${errStart}`);
+              }
+            });
           }
         );
       });
@@ -137,6 +148,14 @@ class ProfilerPlugin {
           );
           resolve();
         });
+
+        if (this.enabled) {
+          try {
+            this.inspector.connect();
+          } catch (err) {
+            this.log(`warning connecting to inspector: ${err}`);
+          }
+        }
 
         if (this.profilerEnabled) {
           this.inspector.post('Profiler.stop', (err, { profile }) => {
