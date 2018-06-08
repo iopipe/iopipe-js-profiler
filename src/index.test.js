@@ -10,15 +10,9 @@ jest.mock('./request');
 import { settings as profilerRuntime } from 'v8-profiler-lambda';
 import { putData } from './request';
 
-test('Can instantiate plugin with or without options', () => {
+test('Can instantiate plugin without options', () => {
   const plugin = Profiler();
   const inst = plugin({});
-  const pluginWithOptions = Profiler({
-    recSamples: false,
-    sampleRate: 100,
-    debug: true
-  });
-  const instWithOptions = pluginWithOptions({});
   expect(_.isFunction(inst.hooks['pre:invoke'])).toBe(true);
   expect(_.isFunction(inst.preInvoke)).toBe(true);
   expect(_.isFunction(inst.hooks['post:invoke'])).toBe(true);
@@ -32,9 +26,20 @@ test('Can instantiate plugin with or without options', () => {
   expect(inst.meta.homepage).toBe(
     'https://github.com/iopipe/iopipe-plugin-profiler#readme'
   );
-  expect(instWithOptions.config.recSamples).toBe(false);
-  expect(instWithOptions.config.sampleRate).toBe(100);
-  expect(instWithOptions.config.debug).toBe(true);
+  inst.postReport();
+});
+
+test('Can instantiate plugin with options', () => {
+  const pluginWithOptions = Profiler({
+    recSamples: false,
+    sampleRate: 100,
+    debug: true
+  });
+  const inst = pluginWithOptions({});
+  expect(inst.config.recSamples).toBe(false);
+  expect(inst.config.sampleRate).toBe(100);
+  expect(inst.config.debug).toBe(true);
+  inst.postReport();
 });
 
 test('works with iopipe', async function runTest() {

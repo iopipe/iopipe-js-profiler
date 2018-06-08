@@ -35,7 +35,8 @@ class ProfilerPlugin {
 
     this.hooks = {
       'pre:invoke': this.preInvoke.bind(this),
-      'post:invoke': this.postInvoke.bind(this)
+      'post:invoke': this.postInvoke.bind(this),
+      'post:report': this.postReport.bind(this)
     };
     this.inspector = new inspector.Session();
 
@@ -195,6 +196,10 @@ class ProfilerPlugin {
         this.log(`warning disconnecting to inspector: ${err}`);
       }
     });
+  }
+
+  postReport() {
+    this.inspector.disconnect();
   }
 }
 
