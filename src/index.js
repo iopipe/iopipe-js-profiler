@@ -63,16 +63,21 @@ class ProfilerPlugin {
 
   preInvoke() {
     if (this.profilerEnabled) {
-      this.inspector.post(
-        'Profiler.setSamplingInterval',
-        this.config.sampleRate,
-        err => {
-          if (err) {
-            this.log(`Error from profiler::${err}`);
-          }
-          this.inspector.post('Profiler.start');
+      this.inspector.post('Profiler.enabled', errEnable => {
+        if (errEnable) {
+          this.log(`Error enabling profiler::${errEnable}`);
         }
-      );
+        this.inspector.post(
+          'Profiler.setSamplingInterval',
+          this.config.sampleRate,
+          err => {
+            if (err) {
+              this.log(`Error from profiler::${err}`);
+            }
+            this.inspector.post('Profiler.start');
+          }
+        );
+      });
     }
   }
 
