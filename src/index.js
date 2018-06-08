@@ -38,7 +38,11 @@ class ProfilerPlugin {
       'post:invoke': this.postInvoke.bind(this)
     };
     this.inspector = new inspector.Session();
-    this.inspector.connect();
+    try {
+      this.inspector.connect();
+    } catch (err) {
+      this.log(`warning connecting to inspector: ${err}`);
+    }
 
     return this;
   }
