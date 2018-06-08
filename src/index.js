@@ -38,6 +38,10 @@ class ProfilerPlugin {
       'post:invoke': this.postInvoke.bind(this)
     };
     this.inspector = new inspector.Session();
+
+    // Enable the remote inspector (on localhost)
+    process.kill(process.pid, 'SIGUSR1');
+
     try {
       this.inspector.connect();
     } catch (err) {
