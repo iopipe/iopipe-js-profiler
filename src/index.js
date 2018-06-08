@@ -130,6 +130,7 @@ class ProfilerPlugin {
     if (!this.enabled) return false;
 
     return new Promise(async resolve => {
+      var filesSeen = 0;
       try {
         const signedRequestURL = await this.getSignedUrl();
         const archive = archiver.default('zip');
@@ -157,16 +158,26 @@ class ProfilerPlugin {
           resolve();
         });
 
+        const filesCount = [
+          this.profilerEnabled,
+          this.heapsnapshotEnabled
+        ].filter(file => file > 0).length;
+        filesSeen = 0;
+        archive.on('entry', () => {
+          filesSeen++;
+          if (filesSeen >= filesCount) {
+            archive.finalize();
+          }
+        });
         if (this.profilerEnabled) {
           this.inspector.post('Profiler.stop', (err, { profile }) => {
             archive.append(JSON.stringify(profile), {
               name: 'profile.cpuprofile'
             });
-            archive.finalize();
           });
         }
-        const heap = new stream.PassThrough();
         if (this.heapsnapshotEnabled) {
+          const heap = new stream.PassThrough();
           this.inspector.post('HeapProfiler.takeHeapSnapshot', () => {
             this.inspector.on(
               'HeapProfiler.addHeapSnapshotChunk',
@@ -179,7 +190,6 @@ class ProfilerPlugin {
               ([, , finished]) => {
                 if (finished) {
                   heap.end();
-                  archive.finalize();
                 }
               }
             );
@@ -189,11 +199,6 @@ class ProfilerPlugin {
       } catch (e) {
         this.log(`Error in upload: ${e}`);
         resolve();
-      }
-      try {
-        this.inspector.disconnect();
-      } catch (err) {
-        this.log(`warning disconnecting to inspector: ${err}`);
       }
     });
   }
