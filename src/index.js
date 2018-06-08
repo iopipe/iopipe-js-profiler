@@ -40,13 +40,7 @@ class ProfilerPlugin {
     this.inspector = new inspector.Session();
 
     // Enable the remote inspector (on localhost)
-
-    try {
-      this.inspector.connect();
-    } catch (err) {
-      this.log(`warning connecting to inspector: ${err}`);
-    }
-
+    //process.kill(process.pid, 'SIGUSR1');
     return this;
   }
 
@@ -65,6 +59,16 @@ class ProfilerPlugin {
   }
 
   preInvoke() {
+    if (!this.enabled) {
+      return;
+    }
+
+    try {
+      this.inspector.connect();
+    } catch (err) {
+      this.log(`warning connecting to inspector: ${err}`);
+    }
+
     if (this.heapsnapshotEnabled) {
       this.inspector.post('HeapProfiler.enable', err => {
         if (err) {
@@ -184,6 +188,11 @@ class ProfilerPlugin {
       } catch (e) {
         this.log(`Error in upload: ${e}`);
         resolve();
+      }
+      try {
+        this.inspector.disconnect();
+      } catch (err) {
+        this.log(`warning disconnecting to inspector: ${err}`);
       }
     });
   }
