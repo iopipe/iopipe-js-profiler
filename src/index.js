@@ -33,6 +33,7 @@ class ProfilerPlugin {
     this.uploads = [];
 
     this.hooks = {
+      'post:setup': this.postSetup.bind(this),
       'pre:invoke': this.preInvoke.bind(this),
       'post:invoke': this.postInvoke.bind(this)
     };
@@ -51,6 +52,10 @@ class ProfilerPlugin {
       enabled: this.enabled,
       uploads: this.uploads
     };
+  }
+
+  postSetup() {
+    this.invocationInstance.context.iopipe.label('@iopipe/plugin-profiler');
   }
 
   preInvoke() {
@@ -88,12 +93,6 @@ class ProfilerPlugin {
 
   async postInvoke() {
     if (!this.enabled) return false;
-
-    const context =
-      (this.invocationInstance && this.invocationInstance.context) || {};
-    if (context.iopipe && context.iopipe.label) {
-      context.iopipe.label('@iopipe/plugin-profiler');
-    }
 
     return new Promise(async resolve => {
       try {
