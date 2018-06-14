@@ -33,7 +33,6 @@ class ProfilerPlugin {
     this.uploads = [];
 
     this.hooks = {
-      'post:setup': this.postSetup.bind(this),
       'pre:invoke': this.preInvoke.bind(this),
       'post:invoke': this.postInvoke.bind(this)
     };
@@ -52,10 +51,6 @@ class ProfilerPlugin {
       enabled: this.enabled,
       uploads: this.uploads
     };
-  }
-
-  postSetup() {
-    this.invocationInstance.context.iopipe.label('@iopipe/plugin-profiler');
   }
 
   preInvoke() {
@@ -131,6 +126,7 @@ class ProfilerPlugin {
           archive.append(heap.export(), { name: 'profile.heapsnapshot' });
         }
         archive.finalize();
+        this.invocationInstance.context.iopipe.label('@iopipe/plugin-profiler');
       } catch (e) {
         this.log('@iopipe/profiler::Error in upload:', e);
         resolve();
