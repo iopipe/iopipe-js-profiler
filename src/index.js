@@ -89,6 +89,11 @@ class ProfilerPlugin {
   async postInvoke() {
     if (!this.enabled) return false;
 
+    const context = this.invocationInstance && this.invocationInstance.context || {};
+    if (context.iopipe && context.iopipe.label) {
+      context.iopipe.label('@iopipe/plugin-profiler');
+    }
+
     return new Promise(async resolve => {
       try {
         const signedRequestURL = await this.getSignedUrl();
