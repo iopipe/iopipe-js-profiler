@@ -126,7 +126,13 @@ class ProfilerPlugin {
           archive.append(heap.export(), { name: 'profile.heapsnapshot' });
         }
         archive.finalize();
-        this.invocationInstance.context.iopipe.label('@iopipe/plugin-profiler');
+        if (
+          typeof this.invocationInstance.context.iopipe.label === 'function'
+        ) {
+          this.invocationInstance.context.iopipe.label(
+            '@iopipe/plugin-profiler'
+          );
+        }
       } catch (e) {
         this.log('@iopipe/profiler::Error in upload:', e);
         resolve();
