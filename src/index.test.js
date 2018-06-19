@@ -38,9 +38,13 @@ test('Can instantiate plugin with or without options', () => {
 });
 
 test('works with iopipe', async function runTest() {
+  let inspectableInv;
   const iopipeInstance = iopipe({
     token: 'test',
-    plugins: [Profiler({ debug: true, enabled: true })]
+    plugins: [
+      Profiler({ debug: true, enabled: true }),
+      inv => (inspectableInv = inv)
+    ]
   });
   const wrappedFn = iopipeInstance((event, context) => {
     expect(profilerRuntime.running).toBe(true);
@@ -53,6 +57,9 @@ test('works with iopipe', async function runTest() {
   expect(val).toBe('wow');
   expect(profilerRuntime.running).toBe(false);
   expect(putData.length).toBe(1);
+  expect(inspectableInv.report.report.labels).toEqual([
+    '@iopipe/plugin-profiler'
+  ]);
   // Test that the data returned has the zip format magic bytes.
   expect(putData[0].slice(0, 4)).toEqual(Buffer([80, 75, 3, 4]));
 });
