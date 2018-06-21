@@ -1,14 +1,13 @@
 const { Readable } = require('stream');
 
 class MockReadable extends Readable {
-  constructor(options) {
-    super(options);
-  }
   /* A readable is "done" when a null is sent. */
-  _read(size) { this.push(null); }
+  _read() {
+    this.push(null);
+  }
 }
 
-export const settings = {
+const settings = {
   sampleRate: 1,
   running: false,
   recSamples: false,
@@ -56,3 +55,5 @@ export default {
   stopProfiling,
   takeSnapshot
 };
+
+export { settings };

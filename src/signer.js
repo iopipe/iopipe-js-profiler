@@ -1,5 +1,5 @@
 export default function getSignerHostname() {
-  var region = '';
+  let region = '';
   const supportedRegions = [
     'ap-northeast-1',
     'ap-southeast-2',
