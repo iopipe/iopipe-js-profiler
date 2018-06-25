@@ -7,8 +7,14 @@ import pkg from '../package.json';
 jest.mock('v8-profiler-lambda');
 jest.mock('./request');
 
-import { settings as profilerRuntime } from 'v8-profiler-lambda';
 import { putData } from './request';
+
+process.env.IOPIPE_TOKEN = 'test';
+
+beforeEach(() => {
+  // reset mock data holder for each test
+  putData.length = 0;
+});
 
 test('Can instantiate plugin without options', () => {
   const plugin = Profiler();
@@ -42,30 +48,28 @@ test('Can instantiate plugin with options', () => {
   inst.postReport();
 });
 
-test('works with iopipe', async function runTest() {
-  const iopipeInstance = iopipe({
-    token: 'test',
-    plugins: [Profiler({ debug: true, enabled: true })]
-  });
-  const wrappedFn = iopipeInstance((event, context) => {
-    // add expectation here that the profiler is running
-    context.succeed('wow');
-  });
-  const context = mockContext({ functionName: 'test-1' });
-  wrappedFn({}, context);
+function runFn(opts, fn = (e, ctx) => ctx.succeed('pass')) {
+  const context = mockContext();
+  iopipe({
+    plugins: [Profiler(opts)]
+  })(fn)({}, context);
+  return context.Promise;
+}
 
-  const val = await context.Promise;
-  expect(val).toBe('wow');
-  expect(profilerRuntime.running).toBe(false);
+test('Works with profiler enabled', async function runTest() {
+  await runFn({ enabled: true });
   expect(putData.length).toBe(1);
-  // Test that the data returned has the zip format magic bytes.
-  expect(putData[0].slice(0, 4)).toEqual(Buffer([80, 75, 3, 4]));
+  expect(putData[0].toString('utf-8')).toMatch(/profile\.cpuprofile/);
 });
 
-test('running post-invoke adds uploads to metadata', async function runTest() {
-  const plugin = Profiler({ enabled: true });
-  const inst = plugin({});
-  expect(_.isEmpty(inst.uploads)).toBeTruthy();
-  await inst.hooks['post:invoke']();
-  expect(inst.uploads[0]).toBe('this-is-a-token');
+test('Works with heapSnapshot enabled', async function runTest() {
+  await runFn({ heapSnapshot: true });
+  expect(putData.length).toBe(1);
+  expect(putData[0].toString('utf-8')).toMatch(/profile\.heapsnapshot/);
+});
+
+test('Works with both enabled', async function runTest() {
+  await runFn({ enabled: true, heapSnapshot: true });
+  expect(putData.length).toBe(1);
+  expect(putData[0].toString('utf-8')).toMatch(/cpuprofile.*heapsnapshot/);
 });

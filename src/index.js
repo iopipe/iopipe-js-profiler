@@ -38,10 +38,18 @@ class ProfilerPlugin {
       'post:invoke': this.postInvoke.bind(this),
       'post:report': this.postReport.bind(this)
     };
-    this.inspector = new inspector.Session();
+    this.session = new inspector.Session();
+    // promisify session.post
+    this.sessionPost = (key, obj = {}) => {
+      return new Promise((resolve, reject) => {
+        this.session.post(
+          key,
+          obj,
+          (err, msg) => (err ? reject(err) : resolve(msg))
+        );
+      });
+    };
 
-    // Enable the remote inspector (on localhost)
-    //process.kill(process.pid, 'SIGUSR1');
     return this;
   }
 
@@ -59,44 +67,27 @@ class ProfilerPlugin {
     };
   }
 
-  preInvoke() {
+  async preInvoke() {
     if (!this.enabled) {
       return;
     }
 
     try {
-      this.inspector.connect();
-    } catch (err) {
-      this.log(`warning connecting to inspector: ${err}`);
-    }
+      this.session.connect();
 
-    if (this.heapsnapshotEnabled) {
-      this.inspector.post('HeapProfiler.enable', err => {
-        if (err) {
-          this.log(`Error enabling profiler::${err}`);
-        }
-      });
-    }
-    if (this.profilerEnabled) {
-      this.inspector.post('Profiler.enable', errEnable => {
-        if (errEnable) {
-          this.log(`Error enabling profiler::${errEnable}`);
-        }
-        this.inspector.post(
-          'Profiler.setSamplingInterval',
-          { interval: this.config.sampleRate },
-          err => {
-            if (err) {
-              this.log(`Error from profiler::${err}`);
-            }
-            this.inspector.post('Profiler.start', errStart => {
-              if (errStart) {
-                this.log(`Error starting profiler::${errStart}`);
-              }
-            });
-          }
-        );
-      });
+      if (this.heapsnapshotEnabled) {
+        await this.sessionPost('HeapProfiler.enable');
+      }
+
+      if (this.profilerEnabled) {
+        await this.sessionPost('Profiler.enable');
+        await this.sessionPost('Profiler.setSamplingInterval', {
+          interval: this.config.sampleRate
+        });
+        await this.sessionPost('Profiler.start');
+      }
+    } catch (err) {
+      this.log(err);
     }
   }
 
@@ -130,7 +121,6 @@ class ProfilerPlugin {
     if (!this.enabled) return false;
 
     return new Promise(async resolve => {
-      var filesSeen = 0;
       try {
         const signedRequestURL = await this.getSignedUrl();
         const archive = archiver.default('zip');
@@ -142,10 +132,9 @@ class ProfilerPlugin {
            then used to construct a Buffer via Buffer.concat(Array),
            a constructor of Buffer. */
         const archiveBuffer = [];
+        const heapSnapshotBufferArr = [];
 
-        archive.on('data', chunk => {
-          archiveBuffer.push(chunk);
-        });
+        archive.on('data', chunk => archiveBuffer.push(chunk));
         archive.on('finish', async () => {
           /* Here uploads to S3 are incompatible with streams.
              Chunked Encoding is not supported for uploads
@@ -158,27 +147,31 @@ class ProfilerPlugin {
           resolve();
         });
 
-        const filesCount = [
+        const totalWantedFiles = [
           this.profilerEnabled,
           this.heapsnapshotEnabled
-        ].filter(file => file > 0).length;
-        filesSeen = 0;
+        ].filter(Boolean).length;
+
+        let filesSeen = 0;
         archive.on('entry', () => {
           filesSeen++;
-          if (filesSeen >= filesCount) {
+          if (filesSeen >= totalWantedFiles) {
             archive.finalize();
           }
         });
+
         if (this.profilerEnabled) {
-          this.inspector.post('Profiler.stop', (err, { profile }) => {
+          this.sessionPost('Profiler.stop').then(({ profile }) => {
             archive.append(JSON.stringify(profile), {
               name: 'profile.cpuprofile'
             });
           });
         }
+
         if (this.heapsnapshotEnabled) {
           const heap = new stream.PassThrough();
-          this.inspector.on(
+
+          this.session.on(
             'HeapProfiler.reportHeapSnapshotProgress',
             ([, , finished]) => {
               if (finished) {
@@ -186,19 +179,21 @@ class ProfilerPlugin {
               }
             }
           );
-          this.inspector.on(
-            'HeapProfiler.addHeapSnapshotChunk',
-            ({ chunk }) => {
-              heap.write(chunk);
-            }
+
+          this.session.on('HeapProfiler.addHeapSnapshotChunk', ({ chunk }) =>
+            heapSnapshotBufferArr.push(chunk)
           );
-          this.inspector.post(
-            'HeapProfiler.takeHeapSnapshot',
-            { reportProgress: true },
-            () => {
-              archive.append(heap, { name: 'profile.heapsnapshot' });
-            }
-          );
+
+          this.sessionPost('HeapProfiler.takeHeapSnapshot', {
+            reportProgress: true
+          }).then(() => {
+            archive.append(
+              Buffer.concat(heapSnapshotBufferArr.filter(Boolean)),
+              {
+                name: 'profile.heapsnapshot'
+              }
+            );
+          });
         }
       } catch (e) {
         this.log(`Error in upload: ${e}`);
@@ -208,7 +203,7 @@ class ProfilerPlugin {
   }
 
   postReport() {
-    this.inspector.disconnect();
+    this.session.disconnect();
   }
 }
 
