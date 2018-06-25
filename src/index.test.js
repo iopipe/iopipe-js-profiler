@@ -48,12 +48,17 @@ test('Can instantiate plugin with options', () => {
   inst.postReport();
 });
 
-function runFn(opts, fn = (e, ctx) => ctx.succeed('pass')) {
+async function runFn(opts, fn = (e, ctx) => ctx.succeed('pass')) {
   const context = mockContext();
+  let inspectableInv;
   iopipe({
-    plugins: [Profiler(opts)]
+    plugins: [Profiler(opts), inv => (inspectableInv = inv)]
   })(fn)({}, context);
-  return context.Promise;
+  const val = await context.Promise;
+  expect(inspectableInv.report.report.labels).toEqual([
+    '@iopipe/plugin-profiler'
+  ]);
+  return val;
 }
 
 test('Works with profiler enabled', async function runTest() {

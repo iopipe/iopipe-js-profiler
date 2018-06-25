@@ -156,6 +156,13 @@ class ProfilerPlugin {
         archive.on('entry', () => {
           filesSeen++;
           if (filesSeen >= totalWantedFiles) {
+            if (
+              typeof this.invocationInstance.context.iopipe.label === 'function'
+            ) {
+              this.invocationInstance.context.iopipe.label(
+                '@iopipe/plugin-profiler'
+              );
+            }
             archive.finalize();
           }
         });
