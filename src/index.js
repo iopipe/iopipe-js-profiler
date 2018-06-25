@@ -5,7 +5,6 @@ import request from './request';
 import enabled from './enabled';
 import getSignerHostname from './signer';
 import * as archiver from 'archiver';
-import * as stream from 'stream';
 
 const pkg = require('../package.json');
 
@@ -176,24 +175,11 @@ class ProfilerPlugin {
         }
 
         if (this.heapsnapshotEnabled) {
-          const heap = new stream.PassThrough();
-
-          this.session.on(
-            'HeapProfiler.reportHeapSnapshotProgress',
-            ([, , finished]) => {
-              if (finished) {
-                heap.end();
-              }
-            }
-          );
-
           this.session.on('HeapProfiler.addHeapSnapshotChunk', ({ chunk }) =>
             heapSnapshotBufferArr.push(chunk)
           );
 
-          this.sessionPost('HeapProfiler.takeHeapSnapshot', {
-            reportProgress: true
-          }).then(() => {
+          this.sessionPost('HeapProfiler.takeHeapSnapshot').then(() => {
             archive.append(
               Buffer.concat(heapSnapshotBufferArr.filter(Boolean)),
               {
