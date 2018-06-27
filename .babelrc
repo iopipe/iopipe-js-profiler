@@ -6,6 +6,7 @@
     }]
   ],
   "presets": [
+    "./node_modules/@iopipe/scripts/babel",
     ["env", {
       "targets": {
         "node": ["4.3"]

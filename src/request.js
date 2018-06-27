@@ -3,23 +3,23 @@ import https from 'https';
 export default function request(body, method, opts, authorizationHeader) {
   const { hostname, path } = opts;
   const requestOptions = {
-    hostname: hostname,
+    hostname,
     path,
     port: 443,
-    method: method
+    method
   };
 
   if (authorizationHeader) {
-    requestOptions['headers'] = {
+    requestOptions.headers = {
       authorization: authorizationHeader
     };
   }
-  requestOptions['headers'] = requestOptions.headers || {};
+  requestOptions.headers = requestOptions.headers || {};
   requestOptions.headers['content-length'] = Buffer.byteLength(body);
   return new Promise((resolve, reject) => {
     const req = https
       .request(requestOptions, res => {
-        var apiResponse = '';
+        let apiResponse = '';
 
         res.on('data', chunk => {
           apiResponse += chunk;
@@ -44,3 +44,6 @@ export default function request(body, method, opts, authorizationHeader) {
     req.end();
   });
 }
+
+// only for tests
+export const putData = [];

@@ -1,10 +1,10 @@
-import v8profiler from 'v8-profiler-lambda';
 import * as urlLib from 'url';
 import get from 'lodash.get';
+import v8profiler from 'v8-profiler-lambda';
+import * as archiver from 'archiver';
 import request from './request';
 import enabled from './enabled';
 import getSignerHostname from './signer';
-import * as archiver from 'archiver';
 
 const pkg = require('../package.json');
 
@@ -40,6 +40,7 @@ class ProfilerPlugin {
   }
 
   log(logline) {
+    // eslint-disable-next-line no-console
     this.config.debug ? console.log(`@iopipe/profiler::${logline}`) : null;
   }
 
@@ -86,7 +87,7 @@ class ProfilerPlugin {
     return response.signedRequest;
   }
 
-  async postInvoke() {
+  postInvoke() {
     if (!this.enabled) return false;
 
     return new Promise(async resolve => {
