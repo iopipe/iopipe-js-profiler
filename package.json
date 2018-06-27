@@ -1,6 +1,6 @@
 {
   "name": "@iopipe/profiler",
-  "version": "1.1.0",
+  "version": "0.0.0-semantically-released",
   "description": "IOpipe plugin for running the v8 profiler on your functions",
   "main": "dist/index.js",
   "scripts": {
