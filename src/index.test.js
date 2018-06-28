@@ -1,13 +1,13 @@
 import mockContext from 'aws-lambda-mock-context';
 import _ from 'lodash';
 import iopipe from '@iopipe/core';
-import Profiler from './index';
-import pkg from '../package.json';
 
-jest.mock('v8-profiler-lambda');
-jest.mock('./request');
-
+import pkg from '../package';
 import { putData } from './request';
+
+const profiler = require('./index');
+
+jest.mock('./request');
 
 process.env.IOPIPE_TOKEN = 'test';
 
@@ -17,7 +17,7 @@ beforeEach(() => {
 });
 
 test('Can instantiate plugin without options', () => {
-  const plugin = Profiler();
+  const plugin = profiler();
   const inst = plugin({});
   expect(_.isFunction(inst.hooks['pre:invoke'])).toBe(true);
   expect(_.isFunction(inst.preInvoke)).toBe(true);
@@ -36,7 +36,7 @@ test('Can instantiate plugin without options', () => {
 });
 
 test('Can instantiate plugin with options', () => {
-  const pluginWithOptions = Profiler({
+  const pluginWithOptions = profiler({
     recSamples: false,
     sampleRate: 100,
     debug: true
@@ -52,7 +52,7 @@ async function runFn(opts, fn = (e, ctx) => ctx.succeed('pass')) {
   const context = mockContext();
   let inspectableInv;
   iopipe({
-    plugins: [Profiler(opts), inv => (inspectableInv = inv)]
+    plugins: [profiler(opts), inv => (inspectableInv = inv)]
   })(fn)({}, context);
   const val = await context.Promise;
   expect(inspectableInv.report.report.labels).toEqual([
@@ -63,18 +63,18 @@ async function runFn(opts, fn = (e, ctx) => ctx.succeed('pass')) {
 
 test('Works with profiler enabled', async function runTest() {
   await runFn({ enabled: true });
-  expect(putData.length).toBe(1);
-  expect(putData[0].toString('utf-8')).toMatch(/profile\.cpuprofile/);
+  expect(putData).toHaveLength(1);
+  expect(putData[0].toString()).toMatch(/profile\.cpuprofile/);
 });
 
 test('Works with heapSnapshot enabled', async function runTest() {
   await runFn({ heapSnapshot: true });
-  expect(putData.length).toBe(1);
-  expect(putData[0].toString('utf-8')).toMatch(/profile\.heapsnapshot/);
+  expect(putData).toHaveLength(1);
+  expect(putData[0].toString()).toMatch(/profile\.heapsnapshot/);
 });
 
 test('Works with both enabled', async function runTest() {
   await runFn({ enabled: true, heapSnapshot: true });
-  expect(putData.length).toBe(1);
-  expect(putData[0].toString('utf-8')).toMatch(/cpuprofile.*heapsnapshot/);
+  expect(putData).toHaveLength(1);
+  expect(putData[0].toString()).toMatch(/cpuprofile[^]+heapsnapshot/);
 });

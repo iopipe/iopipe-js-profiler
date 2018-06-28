@@ -12,18 +12,18 @@ describe('configuring Signer hostname', () => {
 
   it('switches based on the region set in env vars', () => {
     process.env.AWS_REGION = 'ap-southeast-2';
-    let apSoutheast2Signer = getSignerHostname();
+    const apSoutheast2Signer = getSignerHostname();
     process.env.AWS_REGION = 'eu-west-1';
-    let euWest1Signer = getSignerHostname();
+    const euWest1Signer = getSignerHostname();
 
     process.env.AWS_REGION = 'us-east-1';
-    let east1Signer = getSignerHostname();
+    const east1Signer = getSignerHostname();
     process.env.AWS_REGION = 'us-east-2';
-    let east2Signer = getSignerHostname();
+    const east2Signer = getSignerHostname();
     process.env.AWS_REGION = 'us-west-1';
-    let west1Signer = getSignerHostname();
+    const west1Signer = getSignerHostname();
     process.env.AWS_REGION = 'us-west-2';
-    let west2Signer = getSignerHostname();
+    const west2Signer = getSignerHostname();
 
     expect(apSoutheast2Signer).toBe('signer.ap-southeast-2.iopipe.com');
     expect(euWest1Signer).toBe('signer.eu-west-1.iopipe.com');
@@ -35,13 +35,13 @@ describe('configuring Signer hostname', () => {
 
   it('defaults if an uncovered region or malformed', () => {
     process.env.AWS_REGION = 'eu-west-2';
-    let euWest2Signer = getSignerHostname('', {});
+    const euWest2Signer = getSignerHostname('', {});
 
     process.env.AWS_REGION = 'NotARegion';
-    let notRegionSigner = getSignerHostname('', {});
+    const notRegionSigner = getSignerHostname('', {});
 
     process.env.AWS_REGION = '';
-    let emptyRegionSigner = getSignerHostname('', {});
+    const emptyRegionSigner = getSignerHostname('', {});
 
     expect(euWest2Signer).toBe('signer.us-west-2.iopipe.com');
     expect(notRegionSigner).toBe('signer.us-west-2.iopipe.com');

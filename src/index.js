@@ -1,10 +1,11 @@
 import * as inspector from 'inspector';
 import * as urlLib from 'url';
 import get from 'lodash.get';
+import * as archiver from 'archiver';
+
 import request from './request';
 import enabled from './enabled';
 import getSignerHostname from './signer';
-import * as archiver from 'archiver';
 
 const pkg = require('../package.json');
 
@@ -25,12 +26,16 @@ class ProfilerPlugin {
       'IOPIPE_ENABLE_PROFILER',
       this.config.enabled
     );
-    this.heapsnapshotEnabled = enabled(
+    this.heapEnabled = enabled(
       'IOPIPE_ENABLE_HEAPSNAPSHOT',
       this.config.heapSnapshot
     );
-    this.enabled = this.profilerEnabled || this.heapsnapshotEnabled;
+    this.enabled = this.profilerEnabled || this.heapEnabled;
     this.uploads = [];
+
+    // pre-invoke hooks cannot be async, so create our own promise to wait on
+    // before the post-invoke method runs
+    this.pluginReadyPromise = Promise.resolve();
 
     this.hooks = {
       'pre:invoke': this.preInvoke.bind(this),
@@ -53,6 +58,7 @@ class ProfilerPlugin {
   }
 
   log(logline) {
+    // eslint-disable-next-line no-console
     this.config.debug ? console.log(`@iopipe/profiler::${logline}`) : null;
   }
 
@@ -66,25 +72,30 @@ class ProfilerPlugin {
     };
   }
 
-  async preInvoke() {
+  preInvoke() {
     if (!this.enabled) {
       return;
     }
 
+    const promises = [];
+
     try {
       this.session.connect();
 
-      if (this.heapsnapshotEnabled) {
-        await this.sessionPost('HeapProfiler.enable');
+      if (this.heapEnabled) {
+        promises.push(this.sessionPost('HeapProfiler.enable'));
       }
 
       if (this.profilerEnabled) {
-        await this.sessionPost('Profiler.enable');
-        await this.sessionPost('Profiler.setSamplingInterval', {
-          interval: this.config.sampleRate
-        });
-        await this.sessionPost('Profiler.start');
+        promises.concat([
+          this.sessionPost('Profiler.enable'),
+          this.sessionPost('Profiler.setSamplingInterval', {
+            interval: this.config.sampleRate
+          }),
+          this.sessionPost('Profiler.start')
+        ]);
       }
+      this.pluginReadyPromise = Promise.all(promises);
     } catch (err) {
       this.log(err);
     }
@@ -119,6 +130,12 @@ class ProfilerPlugin {
   async postInvoke() {
     if (!this.enabled) return false;
 
+    try {
+      await this.pluginReadyPromise;
+    } catch (err) {
+      return false;
+    }
+
     return new Promise(async resolve => {
       try {
         const signedRequestURL = await this.getSignedUrl();
@@ -148,7 +165,7 @@ class ProfilerPlugin {
 
         const totalWantedFiles = [
           this.profilerEnabled,
-          this.heapsnapshotEnabled
+          this.heapEnabled
         ].filter(Boolean).length;
 
         let filesSeen = 0;
@@ -174,7 +191,7 @@ class ProfilerPlugin {
           });
         }
 
-        if (this.heapsnapshotEnabled) {
+        if (this.heapEnabled) {
           this.session.on('HeapProfiler.addHeapSnapshotChunk', ({ chunk }) =>
             heapSnapshotBufferArr.push(chunk)
           );
