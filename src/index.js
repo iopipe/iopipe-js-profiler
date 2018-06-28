@@ -45,6 +45,7 @@ class ProfilerPlugin {
     this.session = new inspector.Session();
     // promisify session.post
     this.sessionPost = (key, obj = {}) => {
+      this.log(`${key}, opts = ${JSON.stringify(obj)}`);
       return new Promise((resolve, reject) => {
         this.session.post(
           key,
@@ -192,8 +193,13 @@ class ProfilerPlugin {
         }
 
         if (this.heapEnabled) {
-          this.session.on('HeapProfiler.addHeapSnapshotChunk', ({ chunk }) =>
-            heapSnapshotBufferArr.push(chunk)
+          this.session.on('HeapProfiler.addHeapSnapshotChunk', obj =>
+            heapSnapshotBufferArr.push(
+              obj &&
+                obj.params &&
+                obj.params.chunk &&
+                Buffer.from(obj.params.chunk)
+            )
           );
 
           this.sessionPost('HeapProfiler.takeHeapSnapshot').then(() => {
