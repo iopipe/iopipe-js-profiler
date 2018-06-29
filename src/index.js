@@ -134,6 +134,8 @@ class ProfilerPlugin {
     try {
       await this.pluginReadyPromise;
     } catch (err) {
+      this.log(err);
+      // if there is an error setting things up, bail early
       return false;
     }
 
@@ -164,6 +166,8 @@ class ProfilerPlugin {
           resolve();
         });
 
+        // Generate 1 or 2 files total depending on options
+        // We will use this number to know when we should finish up all the work
         const totalWantedFiles = [
           this.profilerEnabled,
           this.heapEnabled
@@ -172,7 +176,7 @@ class ProfilerPlugin {
         let filesSeen = 0;
         archive.on('entry', () => {
           filesSeen++;
-          if (filesSeen >= totalWantedFiles) {
+          if (filesSeen === totalWantedFiles) {
             if (
               typeof this.invocationInstance.context.iopipe.label === 'function'
             ) {
