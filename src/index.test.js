@@ -1,25 +1,24 @@
 import mockContext from 'aws-lambda-mock-context';
 import _ from 'lodash';
 import iopipe from '@iopipe/core';
-import { settings as profilerRuntime } from 'v8-profiler-lambda';
 
+import pkg from '../package';
 import { putData } from './request';
 
-const pkg = require('../package');
 const profiler = require('./index');
 
-jest.mock('v8-profiler-lambda');
 jest.mock('./request');
 
-test('Can instantiate plugin with or without options', () => {
+process.env.IOPIPE_TOKEN = 'test';
+
+beforeEach(() => {
+  // reset mock data holder for each test
+  putData.length = 0;
+});
+
+test('Can instantiate plugin without options', () => {
   const plugin = profiler();
   const inst = plugin({});
-  const pluginWithOptions = profiler({
-    recSamples: false,
-    sampleRate: 100,
-    debug: true
-  });
-  const instWithOptions = pluginWithOptions({});
   expect(_.isFunction(inst.hooks['pre:invoke'])).toBe(true);
   expect(_.isFunction(inst.preInvoke)).toBe(true);
   expect(_.isFunction(inst.hooks['post:invoke'])).toBe(true);
@@ -33,41 +32,49 @@ test('Can instantiate plugin with or without options', () => {
   expect(inst.meta.homepage).toBe(
     'https://github.com/iopipe/iopipe-plugin-profiler#readme'
   );
-  expect(instWithOptions.config.recSamples).toBe(false);
-  expect(instWithOptions.config.sampleRate).toBe(100);
-  expect(instWithOptions.config.debug).toBe(true);
+  inst.postReport();
 });
 
-test('works with iopipe', async function runTest() {
+test('Can instantiate plugin with options', () => {
+  const pluginWithOptions = profiler({
+    recSamples: false,
+    sampleRate: 100,
+    debug: true
+  });
+  const inst = pluginWithOptions({});
+  expect(inst.config.recSamples).toBe(false);
+  expect(inst.config.sampleRate).toBe(100);
+  expect(inst.config.debug).toBe(true);
+  inst.postReport();
+});
+
+async function runFn(opts, fn = (e, ctx) => ctx.succeed('pass')) {
+  const context = mockContext();
   let inspectableInv;
-  const iopipeInstance = iopipe({
-    token: 'test',
-    plugins: [
-      profiler({ debug: true, enabled: true }),
-      inv => (inspectableInv = inv)
-    ]
-  });
-  const wrappedFn = iopipeInstance((event, context) => {
-    expect(profilerRuntime.running).toBe(true);
-    context.succeed('wow');
-  });
-  const context = mockContext({ functionName: 'test-1' });
-  wrappedFn({}, context);
+  iopipe({
+    plugins: [profiler(opts), inv => (inspectableInv = inv)]
+  })(fn)({}, context);
   const val = await context.Promise;
-  expect(val).toBe('wow');
-  expect(profilerRuntime.running).toBe(false);
-  expect(putData).toHaveLength(1);
   expect(inspectableInv.report.report.labels).toEqual([
     '@iopipe/plugin-profiler'
   ]);
-  // Test that the data returned has the zip format magic bytes.
-  expect(putData[0].slice(0, 4)).toEqual(Buffer.from([80, 75, 3, 4]));
+  return val;
+}
+
+test('Works with profiler enabled', async function runTest() {
+  await runFn({ enabled: true });
+  expect(putData).toHaveLength(1);
+  expect(putData[0].toString()).toMatch(/profile\.cpuprofile/);
 });
 
-test('running post-invoke adds uploads to metadata', async function runTest() {
-  const plugin = profiler({ enabled: true });
-  const inst = plugin({});
-  expect(_.isEmpty(inst.uploads)).toBeTruthy();
-  await inst.hooks['post:invoke']();
-  expect(inst.uploads[0]).toBe('this-is-a-token');
+test('Works with heapSnapshot enabled', async function runTest() {
+  await runFn({ heapSnapshot: true });
+  expect(putData).toHaveLength(1);
+  expect(putData[0].toString()).toMatch(/profile\.heapsnapshot/);
+});
+
+test('Works with both enabled', async function runTest() {
+  await runFn({ enabled: true, heapSnapshot: true });
+  expect(putData).toHaveLength(1);
+  expect(putData[0].toString()).toMatch(/cpuprofile[^]+heapsnapshot/);
 });

@@ -1,7 +1,8 @@
+import * as inspector from 'inspector';
 import * as urlLib from 'url';
 import get from 'lodash.get';
-import v8profiler from 'v8-profiler-lambda';
 import * as archiver from 'archiver';
+
 import request from './request';
 import enabled from './enabled';
 import getSignerHostname from './signer';
@@ -25,17 +26,35 @@ class ProfilerPlugin {
       'IOPIPE_ENABLE_PROFILER',
       this.config.enabled
     );
-    this.heapsnapshotEnabled = enabled(
+    this.heapEnabled = enabled(
       'IOPIPE_ENABLE_HEAPSNAPSHOT',
       this.config.heapSnapshot
     );
-    this.enabled = this.profilerEnabled || this.heapsnapshotEnabled;
+    this.enabled = this.profilerEnabled || this.heapEnabled;
     this.uploads = [];
+
+    // pre-invoke hooks cannot be async, so create our own promise to wait on
+    // before the post-invoke method runs
+    this.pluginReadyPromise = Promise.resolve();
 
     this.hooks = {
       'pre:invoke': this.preInvoke.bind(this),
-      'post:invoke': this.postInvoke.bind(this)
+      'post:invoke': this.postInvoke.bind(this),
+      'post:report': this.postReport.bind(this)
     };
+    this.session = new inspector.Session();
+    // promisify session.post
+    this.sessionPost = (key, obj = {}) => {
+      this.log(`${key}, opts = ${JSON.stringify(obj)}`);
+      return new Promise((resolve, reject) => {
+        this.session.post(
+          key,
+          obj,
+          (err, msg) => (err ? reject(err) : resolve(msg))
+        );
+      });
+    };
+
     return this;
   }
 
@@ -55,9 +74,31 @@ class ProfilerPlugin {
   }
 
   preInvoke() {
-    if (this.profilerEnabled) {
-      v8profiler.setSamplingInterval(this.config.sampleRate);
-      v8profiler.startProfiling(undefined, this.config.recSamples);
+    if (!this.enabled) {
+      return;
+    }
+
+    const promises = [];
+
+    try {
+      this.session.connect();
+
+      if (this.heapEnabled) {
+        promises.push(this.sessionPost('HeapProfiler.enable'));
+      }
+
+      if (this.profilerEnabled) {
+        promises.concat([
+          this.sessionPost('Profiler.enable'),
+          this.sessionPost('Profiler.setSamplingInterval', {
+            interval: this.config.sampleRate
+          }),
+          this.sessionPost('Profiler.start')
+        ]);
+      }
+      this.pluginReadyPromise = Promise.all(promises);
+    } catch (err) {
+      this.log(err);
     }
   }
 
@@ -87,8 +128,16 @@ class ProfilerPlugin {
     return response.signedRequest;
   }
 
-  postInvoke() {
+  async postInvoke() {
     if (!this.enabled) return false;
+
+    try {
+      await this.pluginReadyPromise;
+    } catch (err) {
+      this.log(err);
+      // if there is an error setting things up, bail early
+      return false;
+    }
 
     return new Promise(async resolve => {
       try {
@@ -102,10 +151,9 @@ class ProfilerPlugin {
            then used to construct a Buffer via Buffer.concat(Array),
            a constructor of Buffer. */
         const archiveBuffer = [];
+        const heapSnapshotBufferArr = [];
 
-        archive.on('data', chunk => {
-          archiveBuffer.push(chunk);
-        });
+        archive.on('data', chunk => archiveBuffer.push(chunk));
         archive.on('finish', async () => {
           /* Here uploads to S3 are incompatible with streams.
              Chunked Encoding is not supported for uploads
@@ -118,27 +166,64 @@ class ProfilerPlugin {
           resolve();
         });
 
+        // Generate 1 or 2 files total depending on options
+        // We will use this number to know when we should finish up all the work
+        const totalWantedFiles = [
+          this.profilerEnabled,
+          this.heapEnabled
+        ].filter(Boolean).length;
+
+        let filesSeen = 0;
+        archive.on('entry', () => {
+          filesSeen++;
+          if (filesSeen === totalWantedFiles) {
+            if (
+              typeof this.invocationInstance.context.iopipe.label === 'function'
+            ) {
+              this.invocationInstance.context.iopipe.label(
+                '@iopipe/plugin-profiler'
+              );
+            }
+            archive.finalize();
+          }
+        });
+
         if (this.profilerEnabled) {
-          const profile = v8profiler.stopProfiling();
-          archive.append(profile.export(), { name: 'profile.cpuprofile' });
+          this.sessionPost('Profiler.stop').then(({ profile }) => {
+            archive.append(JSON.stringify(profile), {
+              name: 'profile.cpuprofile'
+            });
+          });
         }
-        if (this.heapsnapshotEnabled) {
-          const heap = v8profiler.takeSnapshot();
-          archive.append(heap.export(), { name: 'profile.heapsnapshot' });
-        }
-        archive.finalize();
-        if (
-          typeof this.invocationInstance.context.iopipe.label === 'function'
-        ) {
-          this.invocationInstance.context.iopipe.label(
-            '@iopipe/plugin-profiler'
+
+        if (this.heapEnabled) {
+          this.session.on('HeapProfiler.addHeapSnapshotChunk', obj =>
+            heapSnapshotBufferArr.push(
+              obj &&
+                obj.params &&
+                obj.params.chunk &&
+                Buffer.from(obj.params.chunk)
+            )
           );
+
+          this.sessionPost('HeapProfiler.takeHeapSnapshot').then(() => {
+            archive.append(
+              Buffer.concat(heapSnapshotBufferArr.filter(Boolean)),
+              {
+                name: 'profile.heapsnapshot'
+              }
+            );
+          });
         }
       } catch (e) {
-        this.log('@iopipe/profiler::Error in upload:', e);
+        this.log(`Error in upload: ${e}`);
         resolve();
       }
     });
+  }
+
+  postReport() {
+    this.session.disconnect();
   }
 }
 

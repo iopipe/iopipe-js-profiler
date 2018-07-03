@@ -1,15 +1,9 @@
 {
-  "plugins": [
-    ["transform-runtime", {
-      "polyfill": false,
-      "regenerator": true
-    }]
-  ],
   "presets": [
     "./node_modules/@iopipe/scripts/babel",
     ["env", {
       "targets": {
-        "node": ["4.3"]
+        "node": ["8.10"]
       }
     }]
   ]

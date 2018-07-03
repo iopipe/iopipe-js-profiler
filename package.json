@@ -30,19 +30,19 @@
   "author": "IOpipe, Inc <support@iopipe.com>",
   "license": "Apache-2.0",
   "homepage": "https://github.com/iopipe/iopipe-plugin-profiler#readme",
+  "engines": {
+    "node": ">=8.10.0"
+  },
   "devDependencies": {
     "@iopipe/core": "1.11.0",
     "@iopipe/scripts": "^1.4.1",
     "aws-lambda-mock-context": "^3.1.1",
-    "babel-plugin-transform-runtime": "^6.23.0",
     "lodash": "^4.17.4",
-    "pre-commit": "^1.2.2",
-    "regenerator-runtime": "^0.11.1"
+    "pre-commit": "^1.2.2"
   },
   "dependencies": {
     "archiver": "^2.1.1",
-    "lodash.get": "^4.4.2",
-    "v8-profiler-lambda": "iopipe/v8-profiler-lambda"
+    "lodash.get": "^4.4.2"
   },
   "peerDependencies": {
     "@iopipe/core": "^1.5.0"
