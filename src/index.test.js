@@ -1,19 +1,31 @@
 import mockContext from 'aws-lambda-mock-context';
 import _ from 'lodash';
 import iopipe from '@iopipe/core';
+import nock from 'nock';
 
 import pkg from '../package';
-import { putData } from './request';
 
 const profiler = require('./index');
 
-jest.mock('./request');
-
 process.env.IOPIPE_TOKEN = 'test';
+
+const putData = [];
 
 beforeEach(() => {
   // reset mock data holder for each test
   putData.length = 0;
+
+  // intercept http calls
+  nock(/signer/)
+    .post('/')
+    .reply(200, { jwtAccess: '1234', signedRequest: 'https://aws.com' });
+
+  nock(/aws\.com/)
+    .put('/', body => {
+      putData.push(body);
+      return body;
+    })
+    .reply(200);
 });
 
 test('Can instantiate plugin without options', () => {
@@ -52,12 +64,12 @@ async function runFn(opts, fn = (e, ctx) => ctx.succeed('pass')) {
   const context = mockContext();
   let inspectableInv;
   iopipe({
-    plugins: [profiler(opts), inv => (inspectableInv = inv)]
+    plugins: [profiler({ ...opts, debug: true }), inv => (inspectableInv = inv)]
   })(fn)({}, context);
   const val = await context.Promise;
-  expect(inspectableInv.report.report.labels).toEqual([
+  expect(inspectableInv.report.report.labels).toContain(
     '@iopipe/plugin-profiler'
-  ]);
+  );
   return val;
 }
 

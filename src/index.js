@@ -1,11 +1,13 @@
+import { promisify } from 'util';
 import * as inspector from 'inspector';
-import * as urlLib from 'url';
 import get from 'lodash.get';
 import * as archiver from 'archiver';
+import { util as coreUtil } from '@iopipe/core';
+import { concat } from 'simple-get';
 
-import request from './request';
 import enabled from './enabled';
-import getSignerHostname from './signer';
+
+const request = promisify(concat);
 
 const pkg = require('../package.json');
 
@@ -78,7 +80,8 @@ class ProfilerPlugin {
       return;
     }
 
-    const promises = [];
+    // kick off the S3 signer request early as we have the info necessary
+    const promises = [this.getFileUploadMeta()];
 
     try {
       this.session.connect();
@@ -96,52 +99,43 @@ class ProfilerPlugin {
           this.sessionPost('Profiler.start')
         ]);
       }
+
       this.pluginReadyPromise = Promise.all(promises);
     } catch (err) {
       this.log(err);
     }
   }
 
-  async getSignedUrl(obj = this.invocationInstance) {
-    const { startTimestamp, context = {} } = obj;
-    const hostname = getSignerHostname();
-    this.log(`Requesting signed url from ${hostname}`);
-    const signingRes = await request(
-      JSON.stringify({
-        arn: context.invokedFunctionArn,
-        requestId: context.awsRequestId,
-        timestamp: startTimestamp,
-        extension: '.zip'
-      }),
-      'POST',
-      {
-        hostname,
-        path: '/'
-      },
-      this.token
-    );
-
-    // Parse response to get signed url
-    const response = JSON.parse(signingRes);
-    // attach uploads to plugin data
-    this.uploads.push(response.jwtAccess);
-    return response.signedRequest;
+  getFileUploadMeta() {
+    const { startTimestamp, context = {} } = this.invocationInstance;
+    // returns a promise here
+    return coreUtil.getFileUploadMeta({
+      arn: context.invokedFunctionArn,
+      requestId: context.awsRequestId,
+      timestamp: startTimestamp,
+      auth: this.token
+    });
   }
 
   async postInvoke() {
     if (!this.enabled) return false;
 
     try {
-      await this.pluginReadyPromise;
+      const [fileUploadMeta = {}] = await this.pluginReadyPromise;
+      if (fileUploadMeta.jwtAccess) {
+        this.uploads.push(fileUploadMeta.jwtAccess);
+        this.signedRequestUrl = fileUploadMeta.signedRequest;
+      } else {
+        return this.log(`S3 signer service error. Response: ${fileUploadMeta}`);
+      }
     } catch (err) {
       this.log(err);
       // if there is an error setting things up, bail early
       return false;
     }
 
-    return new Promise(async resolve => {
+    return new Promise(resolve => {
       try {
-        const signedRequestURL = await this.getSignedUrl();
         const archive = archiver.default('zip');
 
         /* NodeJS's Buffer has a fixed-size heap allocation.
@@ -158,11 +152,11 @@ class ProfilerPlugin {
           /* Here uploads to S3 are incompatible with streams.
              Chunked Encoding is not supported for uploads
              to a pre-signed url. */
-          await request(
-            Buffer.concat(archiveBuffer),
-            'PUT',
-            urlLib.parse(signedRequestURL)
-          );
+          await request({
+            url: this.signedRequestUrl,
+            method: 'PUT',
+            body: Buffer.concat(archiveBuffer).toString()
+          });
           resolve();
         });
 

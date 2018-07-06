@@ -38,11 +38,13 @@
     "@iopipe/scripts": "^1.4.1",
     "aws-lambda-mock-context": "^3.1.1",
     "lodash": "^4.17.4",
+    "nock": "^9.4.1",
     "pre-commit": "^1.2.2"
   },
   "dependencies": {
     "archiver": "^2.1.1",
-    "lodash.get": "^4.4.2"
+    "lodash.get": "^4.4.2",
+    "simple-get": "^3.0.2"
   },
   "peerDependencies": {
     "@iopipe/core": "^1.5.0"
