@@ -107,12 +107,8 @@ class ProfilerPlugin {
   }
 
   getFileUploadMeta() {
-    const { startTimestamp, context = {} } = this.invocationInstance;
     // returns a promise here
     return coreUtil.getFileUploadMeta({
-      arn: context.invokedFunctionArn,
-      requestId: context.awsRequestId,
-      timestamp: startTimestamp,
       auth: this.token
     });
   }
