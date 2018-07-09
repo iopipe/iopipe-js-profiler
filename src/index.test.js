@@ -64,7 +64,7 @@ async function runFn(opts, fn = (e, ctx) => ctx.succeed('pass')) {
   const context = mockContext();
   let inspectableInv;
   iopipe({
-    plugins: [profiler({ ...opts, debug: true }), inv => (inspectableInv = inv)]
+    plugins: [profiler(opts), inv => (inspectableInv = inv)]
   })(fn)({}, context);
   const val = await context.Promise;
   expect(inspectableInv.report.report.labels).toContain(
