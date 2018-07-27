@@ -76,17 +76,17 @@ async function runFn(opts, fn = (e, ctx) => ctx.succeed('pass')) {
 test('Works with profiler enabled', async function runTest() {
   await runFn({ enabled: true });
   expect(putData).toHaveLength(1);
-  expect(putData[0].toString()).toMatch(/profile\.cpuprofile/);
+  expect(putData[0].toString().length).toBeGreaterThan(1000);
 });
 
 test('Works with heapSnapshot enabled', async function runTest() {
   await runFn({ heapSnapshot: true });
   expect(putData).toHaveLength(1);
-  expect(putData[0].toString()).toMatch(/profile\.heapsnapshot/);
+  expect(putData[0].toString().length).toBeGreaterThan(1e6);
 });
 
 test('Works with both enabled', async function runTest() {
   await runFn({ enabled: true, heapSnapshot: true });
   expect(putData).toHaveLength(1);
-  expect(putData[0].toString()).toMatch(/cpuprofile[^]+heapsnapshot/);
+  expect(putData[0].toString().length).toBeGreaterThan(1e6);
 });

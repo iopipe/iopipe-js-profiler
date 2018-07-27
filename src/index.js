@@ -108,8 +108,15 @@ class ProfilerPlugin {
 
   getFileUploadMeta() {
     // returns a promise here
+    const {
+      invokedFunctionArn: arn,
+      awsRequestId: requestId
+    } = this.invocationInstance.context;
+
     return coreUtil.getFileUploadMeta({
-      auth: this.token
+      auth: this.token,
+      arn,
+      requestId
     });
   }
 
@@ -122,7 +129,9 @@ class ProfilerPlugin {
         this.uploads.push(fileUploadMeta.jwtAccess);
         this.signedRequestUrl = fileUploadMeta.signedRequest;
       } else {
-        return this.log(`S3 signer service error. Response: ${fileUploadMeta}`);
+        return this.log(
+          `S3 signer service error. Response: ${JSON.stringify(fileUploadMeta)}`
+        );
       }
     } catch (err) {
       this.log(err);
@@ -151,7 +160,7 @@ class ProfilerPlugin {
           await request({
             url: this.signedRequestUrl,
             method: 'PUT',
-            body: Buffer.concat(archiveBuffer).toString()
+            body: Buffer.concat(archiveBuffer)
           });
           resolve();
         });
