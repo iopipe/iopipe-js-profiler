@@ -34,7 +34,7 @@ exports.handler = iopipe((event, context) => {
 
 ### Engines
 
-Use to use >=2.0 of this library, you must be running on Node.js 8 or higher (8.10 and up on AWS Lambda). If you are running on 6.10 on Lambda, use a 1.x version, as the native profiler is not available on that runtime, and will be compiled in the 1.x version of this library.
+To use >=2.0 of this library, you must be running on Node.js 8 or higher (8.10 and up on AWS Lambda). If you are running on 6.10 on Lambda, use a 1.x version, as the native profiler is not available on that runtime, and will be compiled in the 1.x version of this library.
 
 ## Config
 
