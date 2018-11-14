@@ -16,7 +16,8 @@ const defaultConfig = {
   sampleRate: 1000,
   enabled: false,
   heapSnapshot: false,
-  debug: false
+  debug: false,
+  networkTimeout: 5000
 };
 
 class ProfilerPlugin {
@@ -115,6 +116,7 @@ class ProfilerPlugin {
 
     return coreUtil.getFileUploadMeta({
       auth: this.token,
+      networkTimeout: this.config.networkTimeout,
       arn,
       requestId
     });
