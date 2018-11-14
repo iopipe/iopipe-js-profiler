@@ -56,9 +56,11 @@ Change the sampling interval, in microseconds. Defaults to 1000us.
 
 #### `debug` (bool: optional = false)
 
+Show debugging logs.
+
 #### `networkTimeout` (number: optional = 5000)
 
-Show debugging logs.
+Set timeout in ms for network requests.
 
 ## Environment Variables
 
