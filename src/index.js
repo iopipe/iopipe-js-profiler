@@ -109,16 +109,23 @@ class ProfilerPlugin {
 
   getFileUploadMeta() {
     // returns a promise here
+    let { invokedFunctionArn: arn } = this.invocationInstance.context;
+
     const {
-      invokedFunctionArn: arn,
-      awsRequestId: requestId
+      awsRequestId: requestId,
+      functionName
     } = this.invocationInstance.context;
+
+    if (arn === undefined || process.env.AWS_SAM_LOCAL) {
+      arn = `arn:aws:lambda:local:0:function:${functionName}`;
+    }
 
     return coreUtil.getFileUploadMeta({
       auth: this.token,
       networkTimeout: this.config.networkTimeout,
       arn,
-      requestId
+      requestId,
+      functionName
     });
   }
 
