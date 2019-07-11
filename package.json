@@ -38,10 +38,10 @@
     "aws-lambda-mock-context": "^3.2.1",
     "lodash": "^4.17.11",
     "nock": "^9.4.1",
-    "pre-commit": "^1.2.2"
+    "pre-commit": "^1.2.2",
+    "@iopipe/core": "^1.19.1"
   },
   "dependencies": {
-    "@iopipe/core": "^1.19.1",
     "archiver": "^2.1.1",
     "lodash.get": "^4.4.2",
     "simple-get": "^3.0.3"
