@@ -2,9 +2,7 @@ import { promisify } from 'util';
 import * as inspector from 'inspector';
 import get from 'lodash.get';
 import * as archiver from 'archiver';
-import { util as coreUtil } from '@iopipe/core';
 import { concat } from 'simple-get';
-
 import enabled from './enabled';
 
 const request = promisify(concat);
@@ -58,6 +56,8 @@ class ProfilerPlugin {
       });
     };
 
+    this.coreUtil = null;
+
     return this;
   }
 
@@ -107,7 +107,13 @@ class ProfilerPlugin {
     }
   }
 
-  getFileUploadMeta() {
+  async getFileUploadMeta() {
+    // patch for potential circular dependency with core
+    if (!this.coreUtil) {
+      const core = await require('@iopipe/core');
+      this.coreUtil = core.util;
+    }
+
     // returns a promise here
     let { invokedFunctionArn: arn } = this.invocationInstance.context;
 
@@ -120,7 +126,7 @@ class ProfilerPlugin {
       arn = `arn:aws:lambda:local:0:function:${functionName}`;
     }
 
-    return coreUtil.getFileUploadMeta({
+    return this.coreUtil.getFileUploadMeta({
       auth: this.token,
       networkTimeout: this.config.networkTimeout,
       arn,
